@@ -1,8 +1,7 @@
+// ProductSelect.tsx
 import dynamic from "next/dynamic";
 
-const ProductSelect = dynamic(
+export default dynamic(
   () => import("./ProductSelect.client"),
   { ssr: false }
 );
-
-export default ProductSelect;

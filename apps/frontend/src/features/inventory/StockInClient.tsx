@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { apiFetchClient } from "@/lib/api.client";
 
-import ProductSelect from "@/features/products/ProductSelect.client";
-import WarehouseSelect from "@/features/warehouses/WarehouseSelect.client";
+import ProductSelect from "@/features/products/ProductSelect";
+import WarehouseSelect from "@/features/warehouses/WarehouseSelect";
 
 export default function StockInClient() {
   const [products, setProducts] = useState<any[]>([]);
@@ -38,12 +38,14 @@ export default function StockInClient() {
       <h1 className="text-xl font-semibold">Stock In</h1>
 
       <ProductSelect
+        key={0}
         products={products}
         value={productId}
         onChange={setProductId}
       />
 
       <WarehouseSelect
+        key={1}
         warehouses={warehouses}
         value={warehouseId}
         onChange={setWarehouseId}
@@ -55,10 +57,9 @@ export default function StockInClient() {
         className="border p-2 w-full"
         placeholder="Quantity"
         onChange={e => setQuantity(+e.target.value)}
-        disabled={!canSubmit}
       />
 
-      <button className="border px-4 py-2" onClick={submit}>
+      <button className="border px-4 py-2" onClick={submit} disabled={!canSubmit}>
         Submit
       </button>
     </div>
