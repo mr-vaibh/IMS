@@ -70,8 +70,8 @@ export default function AuditTable({ audits }: { audits: AuditLog[] }) {
       <AuditDiffModal
         open={!!selected}
         onClose={() => setSelected(null)}
-        oldData={selected?.old_data}
-        newData={selected?.new_data}
+        oldData={selected?.old_data ?? {}}
+        newData={selected?.new_data ?? {}}
       />
     </>
   );

@@ -69,7 +69,6 @@ export default function InventoryActions({
         <TransferModal
           productId={productId}
           fromWarehouseId={warehouseId}
-          warehouses={warehouses}
           onClose={() => setModal(null)}
         />
       )}
