@@ -38,14 +38,12 @@ export default function StockInClient() {
       <h1 className="text-xl font-semibold">Stock In</h1>
 
       <ProductSelect
-        key={0}
         products={products}
         value={productId}
         onChange={setProductId}
       />
 
       <WarehouseSelect
-        key={1}
         warehouses={warehouses}
         value={warehouseId}
         onChange={setWarehouseId}

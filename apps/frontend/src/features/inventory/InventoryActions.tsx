@@ -24,7 +24,7 @@ export default function InventoryActions({
 
   return (
     <>
-      <div className="flex gap-2">
+      <div className="flex justify-center gap-2">
         <button
           onClick={() => setModal("IN")}
           className="px-2 py-1 text-sm border"

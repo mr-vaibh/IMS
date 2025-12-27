@@ -16,6 +16,7 @@ export default function InventoryClient() {
         const inventory = await apiFetchClient("/inventory");
         const warehouses = await apiFetchClient("/warehouses");
 
+        console.log("Fetched inventory items:", inventory.items);
         setRows(inventory.items);
         setWarehouses(warehouses);
       } catch (e: any) {

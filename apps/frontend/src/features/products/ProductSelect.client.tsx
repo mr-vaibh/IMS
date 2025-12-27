@@ -30,15 +30,31 @@ export default function ProductSelect({
 
   // sync options
   useEffect(() => {
-    const opts = products.map((p) => ({
-      value: p.id,
-      label: p.name,
-    }));
-    setOptions(opts);
+    setOptions((prev) => {
+      const base = products.map((p) => ({
+        value: p.id,
+        label: p.name,
+      }));
 
-    const found = opts.find((o) => o.value === value) || null;
-    setSelected(found);
-  }, [products, value]);
+      // keep locally created options
+      const merged = [
+        ...base,
+        ...prev.filter(
+          (o) => !base.some((b) => b.value === o.value)
+        ),
+      ];
+
+      return merged;
+    });
+  }, [products]);
+
+  useEffect(() => {
+    setSelected((prev) => {
+      return (
+        options.find((o) => o.value === value) ?? prev
+      );
+    });
+  }, [value, options]);
 
   async function handleCreate(inputValue: string) {
     const res = await apiFetchClient("/products", {

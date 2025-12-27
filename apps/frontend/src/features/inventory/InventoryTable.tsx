@@ -15,6 +15,7 @@ export default function InventoryTable({
   rows: InventoryRow[];
   warehouses: Warehouse[];
 }) {
+  console.log("Rendering InventoryTable with rows:", rows);
   return (
     <table className="w-full border border-gray-300">
       <thead className="bg-gray-100">

@@ -4,25 +4,31 @@ export async function apiFetchClient(
   path: string,
   options: RequestInit = {}
 ) {
-  const token = localStorage.getItem("access_token");
-
   const res = await fetch(`http://localhost:8000/api${path}`, {
     ...options,
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.headers || {}),
     },
   });
 
-  if (res.status === 401) {
-    // future: redirect to login
-    throw new Error("Unauthorized");
+  const text = await res.text();
+
+  const authPages = ["/login", "/signup"];
+  if (
+    res.status === 401 &&
+    JSON.parse(text)?.detail === "Invalid or expired token" &&
+    !authPages.includes(window.location.pathname)
+  ) {
+    window.location.href = "/login";
+    return;
   }
+
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || "Request failed");
+    throw new Error(`HTTP ${res.status}: ${text}`);
   }
 
-  return res.json();
+  return text ? JSON.parse(text) : null;
 }

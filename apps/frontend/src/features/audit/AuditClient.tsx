@@ -17,6 +17,8 @@ export default function AuditClient() {
       .finally(() => setLoading(false));
   }, []);
 
+  console.log("AuditClient audits:", audits);
+
   if (loading) {
     return <div className="p-6">Loading audit trail…</div>;
   }

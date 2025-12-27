@@ -1,7 +1,73 @@
 from django.contrib import admin
-from .models import Product, Warehouse, InventoryStock, InventoryLedger
+from inventory.models import (
+    Product,
+    Warehouse,
+    InventoryStock,
+    InventoryLedger,
+    InventoryAdjustment,
+)
 
-admin.site.register(Product)
-admin.site.register(Warehouse)
-admin.site.register(InventoryStock)
-admin.site.register(InventoryLedger)
+
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ("name", "sku", "created_at")
+    search_fields = ("name", "sku")
+    readonly_fields = ("created_at",)
+
+
+@admin.register(Warehouse)
+class WarehouseAdmin(admin.ModelAdmin):
+    list_display = ("name", "code", "created_at")
+    search_fields = ("name", "code")
+    readonly_fields = ("created_at",)
+
+@admin.register(InventoryStock)
+class InventoryStockAdmin(admin.ModelAdmin):
+    list_display = ("product", "warehouse", "quantity", "version")
+    search_fields = ("product__name", "warehouse__name")
+    list_filter = ("warehouse",)
+    readonly_fields = ("version",)
+
+@admin.register(InventoryLedger)
+class InventoryLedgerAdmin(admin.ModelAdmin):
+    list_display = (
+        "product",
+        "warehouse",
+        "change",
+        "balance_after",
+        "reference_type",
+        "created_at",
+    )
+    list_filter = ("warehouse", "reference_type")
+    search_fields = ("product__name",)
+    readonly_fields = [f.name for f in InventoryLedger._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+@admin.register(InventoryAdjustment)
+class InventoryAdjustmentAdmin(admin.ModelAdmin):
+    list_display = (
+        "product",
+        "warehouse",
+        "delta",
+        "status",
+        "requested_by",
+        "approved_by",
+        "decided_at",
+    )
+
+    list_filter = ("status", "warehouse")
+    search_fields = ("product__name",)
+
+    readonly_fields = (
+        "requested_by",
+        "approved_by",
+        "decided_at",
+    )

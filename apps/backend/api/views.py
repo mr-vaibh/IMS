@@ -21,6 +21,7 @@ from inventory.models import Product, InventoryStock, InventoryLedger, Warehouse
 @permission_classes([IsAuthenticated])
 def my_permissions(request):
     role = request.user.userprofile.role
+    print("AUTH USER:", request.user, request.user.is_authenticated)
     perms = list(
         RolePermission.objects
         .filter(role=role)
@@ -47,7 +48,9 @@ def inventory_list(request):
     return Response({
         "items": [
             {
+                "product_id": s.product.id,
                 "product_name": s.product.name,
+                "warehouse_id": s.warehouse.id,
                 "warehouse_name": s.warehouse.name,
                 "quantity": s.quantity,
             }
@@ -104,7 +107,6 @@ def product_list_create(request):
         new_data={
             "name": p.name,
             "sku": p.sku,
-            "description": p.description,
         },
     )
 
@@ -195,26 +197,33 @@ def warehouse_delete(request, pk):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def audit_list(request):
-    if not user_has_permission(request.user, "inventory.view_audit"):
-        return JsonResponse({"message": "Forbidden"}, status=403)
+    qs = (
+        AuditLog.objects
+        .select_related("actor")
+        .order_by("-created_at")
+    )
 
-    logs = AuditLog.objects.order_by("-created_at")[:500]
+    items, meta = paginate(qs, request)
 
-    data = [
-        {
-            "id": a.id,
-            "entity": a.entity,
-            "entity_id": a.entity_id,
-            "action": a.action,
-            "actor_id": a.actor_id,
-            "created_at": a.created_at,
-            "old_data": a.old_data,
-            "new_data": a.new_data,
-        }
-        for a in logs
-    ]
-
-    return JsonResponse(data, safe=False)
+    return Response({
+        "items": [
+            {
+                "id": a.id,
+                "time": a.created_at.isoformat(),
+                "entity": a.entity,
+                "entity_id": a.entity_id,
+                "action": a.action,
+                "actor": {
+                    "id": str(a.actor.id) if a.actor else None,
+                    "username": a.actor.username if a.actor else "system",
+                },
+                "old_data": a.old_data,
+                "new_data": a.new_data,
+            }
+            for a in items
+        ],
+        "meta": meta,
+    })
 
 # ================ Reports Views =================
 
@@ -295,24 +304,24 @@ from inventory.services import stock_in_service, stock_out_service
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def stock_in(request):
-    if not user_has_permission(request.user, "inventory.manage"):
+    if not user_has_permission(request.user, "inventory.stock_in"):
         return Response({"message": "Forbidden"}, status=403)
 
-    stock_in_service(
-        actor=request.user,
+    stock, ledger = stock_in_service(
+        actor_id=request.user.id,
         product_id=request.data["product_id"],
         warehouse_id=request.data["warehouse_id"],
         quantity=int(request.data["quantity"]),
         reason=request.data.get("reason"),
     )
 
-    return Response({"message": "ok"})
+    return Response({"message": "ok", "stock_id": str(stock.id), "ledger_id": str(ledger.id)})
 
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def stock_out(request):
-    if not user_has_permission(request.user, "inventory.manage"):
+    if not user_has_permission(request.user, "inventory.stock_out"):
         return Response({"message": "Forbidden"}, status=403)
 
     product_id = request.data.get("product_id")
@@ -324,7 +333,7 @@ def stock_out(request):
 
     try:
         stock_out_service(
-            actor=request.user,
+            actor_id=request.user.id,
             product_id=product_id,
             warehouse_id=warehouse_id,
             quantity=quantity,
@@ -334,3 +343,38 @@ def stock_out(request):
         return Response({"message": str(e)}, status=400)
 
     return Response({"message": "Stock removed"})
+
+
+
+# ================ Login Views =================
+
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.response import Response
+
+class CookieTokenObtainPairView(TokenObtainPairView):
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        access = serializer.validated_data["access"]
+        refresh = serializer.validated_data["refresh"]
+
+        response = Response({"success": True})
+
+        response.set_cookie(
+            key="access_token",
+            value=str(access),
+            httponly=True,
+            samesite="Lax",
+            path="/",
+        )
+
+        response.set_cookie(
+            key="refresh_token",
+            value=str(refresh),
+            httponly=True,
+            samesite="Lax",
+            path="/",
+        )
+
+        return response

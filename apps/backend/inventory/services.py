@@ -26,16 +26,19 @@ def _get_or_create_stock(product, warehouse):
 @transaction.atomic
 def stock_in_service(
     *,
+    actor_id,
     product_id,
     warehouse_id,
     quantity,
-    actor_id,
+    reason=None,
     reference_type="STOCK_IN",
     reference_id=None,
-    reason=None,
 ):
     if quantity <= 0:
         raise ValueError("Quantity must be positive")
+    
+    if reference_id is None:
+        reference_id = uuid4()
 
     product = Product.objects.get(id=product_id)
     warehouse = Warehouse.objects.get(id=warehouse_id)
@@ -48,7 +51,7 @@ def stock_in_service(
     stock.version += 1
     stock.save()
 
-    InventoryLedger.objects.create(
+    ledger = InventoryLedger.objects.create(
         product=product,
         warehouse=warehouse,
         change=quantity,
@@ -68,15 +71,17 @@ def stock_in_service(
         new_data=model_to_dict(stock),
     )
 
+    return stock, ledger
+
 
 
 @transaction.atomic
 def stock_out_service(
     *,
+    actor_id,
     product_id,
     warehouse_id,
     quantity,
-    actor_id,
     reference_type="STOCK_OUT",
     reference_id=None,
     reason=None,
@@ -94,6 +99,8 @@ def stock_out_service(
 
     if stock.quantity < quantity:
         raise ValueError("Insufficient stock")
+    if reference_id is None:
+        reference_id = uuid4()
 
     old_stock = model_to_dict(stock)
 

@@ -1,12 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Get redirect target from middleware
+  const next = searchParams.get("next") || "/inventory";
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -17,21 +24,17 @@ export default function LoginPage() {
       const res = await fetch("http://localhost:8000/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ username, password }),
-      });   
+      });
 
       if (!res.ok) {
         throw new Error("Invalid credentials");
       }
 
-      const data = await res.json();
-
-      localStorage.setItem("access_token", data.access);
-      localStorage.setItem("refresh_token", data.refresh);
-
-      window.location.href = "/inventory";
-    } catch (e: any) {
-      setError(e.message);
+      router.replace(next);
+    } catch (err: any) {
+      setError(err.message || "Login failed");
     } finally {
       setLoading(false);
     }
@@ -52,6 +55,7 @@ export default function LoginPage() {
           placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
+          required
         />
 
         <input
@@ -60,11 +64,13 @@ export default function LoginPage() {
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          required
         />
 
         <button
+          type="submit"
           disabled={loading}
-          className="w-full bg-black text-white p-2"
+          className="w-full bg-black text-white p-2 disabled:opacity-50"
         >
           {loading ? "Logging in..." : "Login"}
         </button>
