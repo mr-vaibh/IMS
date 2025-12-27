@@ -12,14 +12,14 @@ export default function Modal({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
-      <div className="bg-white w-full max-w-md rounded shadow-lg">
-        <div className="flex justify-between items-center border-b px-4 py-3">
+    <div className="fixed inset-0 z-50 modal-backdrop flex items-center justify-center px-4">
+      <div className="modal-panel bg-white w-full max-w-md">
+        <div className="flex justify-between items-center px-4 py-3 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-600)] text-white">
           <h2 className="font-semibold">{title}</h2>
-          <button onClick={onClose} className="text-gray-500">✕</button>
+          <button onClick={onClose} className="text-white opacity-90 hover:opacity-100">✕</button>
         </div>
 
-        <div className="p-4">{children}</div>
+        <div className="p-5">{children}</div>
       </div>
     </div>
   );

@@ -10,11 +10,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-white text-black">
+      <body className="bg-[var(--bg)] text-slate-900 antialiased">
         <AuthProvider>
-          <Navbar />
-          <main className="max-w-7xl mx-auto p-6">{children}</main>
-          <Toaster richColors position="top-right" />
+          <div className="px-4 py-6">
+            <Navbar />
+
+            <main className="app-shell">{children}</main>
+
+            <Toaster richColors position="top-right" />
+          </div>
         </AuthProvider>
       </body>
     </html>
