@@ -15,8 +15,8 @@ export default function MovementReport({
         <ExportCSV filename="stock_movement.csv" rows={rows} />
       </div>
 
-      <table className="w-full border text-sm">
-        <thead className="bg-gray-100">
+      <table className="table text-sm">
+        <thead>
           <tr>
             <th className="p-2">Time</th>
             <th className="p-2">Product</th>

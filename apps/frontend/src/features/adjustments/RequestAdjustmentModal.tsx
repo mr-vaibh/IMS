@@ -64,13 +64,11 @@ export default function RequestAdjustmentModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-      <div className="bg-white p-4 rounded w-96 space-y-3">
+    <div className="fixed inset-0 z-40 modal-backdrop flex items-center justify-center px-4">
+      <div className="modal-panel bg-white w-full max-w-md p-5 space-y-4">
         <h2 className="font-semibold">Request Inventory Adjustment</h2>
 
-        {error && (
-          <p className="text-sm text-red-600">{error}</p>
-        )}
+        {error && <p className="text-sm text-red-600">{error}</p>}
 
         <ProductSelect
           products={products}
@@ -86,30 +84,28 @@ export default function RequestAdjustmentModal({
 
         <input
           type="number"
-          className="border p-2 w-full"
+          className="border p-2 w-full rounded"
           placeholder="Adjustment (+ / -)"
           value={delta || ""}
           onChange={(e) => setDelta(Number(e.target.value))}
         />
 
         <textarea
-          className="border p-2 w-full"
+          className="border p-2 w-full rounded"
           placeholder="Reason (required)"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
         />
 
         <div className="flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="border px-3 py-1"
-          >
+          <button onClick={onClose} className="btn-ghost">
             Cancel
           </button>
+
           <button
             onClick={submit}
             disabled={loading}
-            className="bg-black text-white px-3 py-1 disabled:opacity-50"
+            className={`btn-primary ${loading ? 'opacity-60' : ''}`}
           >
             {loading ? "Submitting…" : "Submit"}
           </button>

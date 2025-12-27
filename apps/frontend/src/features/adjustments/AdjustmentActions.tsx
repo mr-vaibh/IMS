@@ -23,10 +23,10 @@ export default function AdjustmentActions({ adjustment }: { adjustment: any }) {
 
   return (
     <div className="flex gap-2">
-      <button onClick={approve} className="px-2 py-1 border text-green-600">
+      <button onClick={approve} className="btn-success">
         Approve
       </button>
-      <button onClick={reject} className="px-2 py-1 border text-red-600">
+      <button onClick={reject} className="btn-danger">
         Reject
       </button>
     </div>

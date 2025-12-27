@@ -16,8 +16,8 @@ export default function AdjustmentTable({
   }
 
   return (
-    <table className="w-full border text-sm">
-      <thead className="bg-gray-100">
+    <table className="table text-sm">
+      <thead>
         <tr>
           <th className="p-2">Product</th>
           <th className="p-2">Warehouse</th>
@@ -53,13 +53,13 @@ export default function AdjustmentTable({
                 <div className="flex gap-2">
                   <button
                     onClick={() => act(a.id, "approve")}
-                    className="border px-2 py-1"
+                    className="btn-success text-sm"
                   >
                     Approve
                   </button>
                   <button
                     onClick={() => act(a.id, "reject")}
-                    className="border px-2 py-1"
+                    className="btn-danger text-sm"
                   >
                     Reject
                   </button>

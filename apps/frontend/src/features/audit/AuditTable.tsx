@@ -9,8 +9,8 @@ export default function AuditTable({ audits }: { audits: AuditLog[] }) {
 
   return (
     <>
-      <table className="w-full border border-gray-300 text-sm">
-        <thead className="bg-gray-100">
+      <table className="table text-sm">
+        <thead>
           <tr>
             <th className="p-2 text-left">Time</th>
             <th className="p-2 text-left">Entity</th>
@@ -42,7 +42,7 @@ export default function AuditTable({ audits }: { audits: AuditLog[] }) {
               <td className="p-2">
                 <button
                   onClick={() => setSelected(a)}
-                  className="underline text-blue-600"
+                  className="btn-ghost text-sm"
                 >
                   View
                 </button>

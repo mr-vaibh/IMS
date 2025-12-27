@@ -11,8 +11,8 @@ export default function StockReport({ rows }: { rows: StockReportRow[] }) {
         <ExportCSV filename="current_stock.csv" rows={rows} />
       </div>
 
-      <table className="w-full border">
-        <thead className="bg-gray-100">
+      <table className="table">
+        <thead>
           <tr>
             <th className="p-2 text-left">Product</th>
             <th className="p-2 text-left">Warehouse</th>

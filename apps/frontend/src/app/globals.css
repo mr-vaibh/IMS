@@ -95,6 +95,50 @@ body {
   border-radius: 10px;
 }
 
+/* Button variants */
+.btn-success {
+  background: linear-gradient(90deg,#16a34a,#15803d);
+  color: white;
+  padding: 0.45rem 0.8rem;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.btn-danger {
+  background: linear-gradient(90deg,#ef4444,#dc2626);
+  color: white;
+  padding: 0.45rem 0.8rem;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+/* Tables */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(16,24,40,0.04);
+}
+.table thead th {
+  text-align: left;
+  font-weight: 600;
+  padding: 12px 14px;
+  background: linear-gradient(180deg, rgba(37,99,235,0.06), rgba(96,165,250,0.02));
+  color: var(--primary-600);
+  font-size: 13px;
+}
+.table tbody td {
+  padding: 12px 14px;
+  border-top: 1px solid rgba(15,23,42,0.04);
+  font-size: 14px;
+}
+.table tbody tr:hover td {
+  background: rgba(37,99,235,0.02);
+}
+
+.text-muted { color: var(--muted); }
+
 /* Small helpers */
 .muted { color: var(--muted); }
 

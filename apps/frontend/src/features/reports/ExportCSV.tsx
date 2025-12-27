@@ -30,7 +30,7 @@ export default function ExportCSV({
   }
 
   return (
-    <button onClick={exportCSV} className="border px-2 py-1 text-sm">
+    <button onClick={exportCSV} className="btn-ghost text-sm">
       Export CSV
     </button>
   );

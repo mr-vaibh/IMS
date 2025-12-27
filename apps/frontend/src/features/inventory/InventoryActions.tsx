@@ -27,21 +27,21 @@ export default function InventoryActions({
       <div className="flex justify-center gap-2">
         <button
           onClick={() => setModal("IN")}
-          className="px-2 py-1 text-sm border"
+          className="btn-primary text-sm"
         >
           + In
         </button>
 
         <button
           onClick={() => setModal("OUT")}
-          className="px-2 py-1 text-sm border"
+          className="btn-danger text-sm"
         >
           − Out
         </button>
 
         <button
           onClick={() => setModal("TRANSFER")}
-          className="px-2 py-1 text-sm border"
+          className="btn-ghost text-sm"
         >
           ⇄ Transfer
         </button>

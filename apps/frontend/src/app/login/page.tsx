@@ -80,7 +80,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-black text-white p-2 disabled:opacity-50"
+          className={`w-full btn-primary ${loading ? 'opacity-60' : ''}`}
         >
           {loading ? "Logging in..." : "Login"}
         </button>
