@@ -33,7 +33,22 @@ export default function AuditTable({ audits }: { audits: AuditLog[] }) {
                 </span>
               </td>
 
-              <td className="p-2 font-medium">{a.action}</td>
+              <td className="p-2">
+                {(() => {
+                  const actionText = String(a.action || "");
+                  const key = actionText.toLowerCase();
+                  let cls = "badge";
+                  if (key === "create") cls += " badge-create";
+                  else if (key === "update") cls += " badge-update";
+                  else if (key === "delete") cls += " badge-delete";
+
+                  const label = actionText
+                    ? actionText.charAt(0).toUpperCase() + actionText.slice(1).toLowerCase()
+                    : "-";
+
+                  return <span className={cls}>{label}</span>;
+                })()}
+              </td>
 
               <td className="p-2">
                 {a.actor?.username ?? "System"}
