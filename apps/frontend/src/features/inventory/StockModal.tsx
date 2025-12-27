@@ -46,37 +46,46 @@ export default function StockModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-      <div className="bg-white p-4 rounded w-96">
-        <h2 className="font-semibold mb-2">
-          {type === "IN" ? "Stock In" : "Stock Out"}
-        </h2>
+    <div className="fixed inset-0 z-40 modal-backdrop flex items-center justify-center px-4">
+      <div className="modal-panel bg-white w-full max-w-md">
+        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-600)] text-white">
+          <h2 className="font-semibold mb-0">{type === "IN" ? "Stock In" : "Stock Out"}</h2>
+          <button onClick={onClose} className="text-white opacity-90 hover:opacity-100">✕</button>
+        </div>
 
-        <input
-          className="border w-full p-2 mb-2"
-          placeholder="Quantity"
-          value={quantity}
-          onChange={(e) => setQuantity(e.target.value)}
-        />
+        <div className="p-4">
+          <div className="mb-3">
+            <label className="block text-sm text-muted mb-1">Quantity</label>
+            <input
+              className="input"
+              placeholder="Quantity"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+            />
+          </div>
 
-        <input
-          className="border w-full p-2 mb-4"
-          placeholder="Reason (optional)"
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-        />
+          <div className="mb-4">
+            <label className="block text-sm text-muted mb-1">Reason (optional)</label>
+            <input
+              className="input"
+              placeholder="Reason (optional)"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+            />
+          </div>
 
-        <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="px-3 py-1 border">
-            Cancel
-          </button>
-          <button
-            onClick={submit}
-            disabled={loading}
-            className="px-3 py-1 bg-black text-white"
-          >
-            {loading ? "Saving..." : "Submit"}
-          </button>
+          <div className="flex justify-end gap-2">
+            <button onClick={onClose} className="btn-ghost">
+              Cancel
+            </button>
+            <button
+              onClick={submit}
+              disabled={loading}
+              className={`btn-primary ${loading ? 'opacity-60' : ''}`}
+            >
+              {loading ? "Saving..." : "Submit"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
