@@ -17,11 +17,15 @@ export async function apiFetchClient(
 
   const authPages = ["/login", "/signup"];
   if (
-    res.status === 401 &&
-    JSON.parse(text)?.detail === "Invalid or expired token" &&
+    (res.status === 401) &&
     !authPages.includes(window.location.pathname)
   ) {
     window.location.href = "/login";
+    return;
+  }
+
+  if (res.status === 403) {
+    alert("You do not have permission to perform this action.");
     return;
   }
 
@@ -30,5 +34,5 @@ export async function apiFetchClient(
     throw new Error(`HTTP ${res.status}: ${text}`);
   }
 
-  return text ? JSON.parse(text) : null;
+  return text ? JSON.parse(text) : {};
 }

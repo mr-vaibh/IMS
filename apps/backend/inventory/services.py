@@ -134,51 +134,34 @@ def stock_out_service(
 @transaction.atomic
 def transfer_stock_service(
     *,
+    actor_id,
     product_id,
     from_warehouse_id,
     to_warehouse_id,
     quantity,
-    actor_id,
     reason=None,
 ):
     if quantity <= 0:
         raise ValueError("Quantity must be positive")
 
     if from_warehouse_id == to_warehouse_id:
-        raise ValueError("Source and destination warehouse cannot be same")
+        raise ValueError("Cannot transfer to same warehouse")
 
     product = Product.objects.get(id=product_id)
     from_wh = Warehouse.objects.get(id=from_warehouse_id)
     to_wh = Warehouse.objects.get(id=to_warehouse_id)
 
-    # lock both stock rows (consistent ordering avoids deadlocks)
-    stocks = (
-        InventoryStock.objects
-        .select_for_update()
-        .filter(product=product, warehouse__in=[from_wh, to_wh])
-    )
+    # ensure same company
+    if from_wh.company_id != to_wh.company_id:
+        raise ValueError("Cross-company transfer not allowed")
 
-    stock_map = {s.warehouse_id: s for s in stocks}
+    from_stock = _get_or_create_stock(product, from_wh)
+    if from_stock.quantity < quantity:
+        raise ValueError("Insufficient stock")
 
-    from_stock = stock_map.get(from_wh.id)
-    if not from_stock or from_stock.quantity < quantity:
-        raise ValueError("Insufficient stock in source warehouse")
+    to_stock = _get_or_create_stock(product, to_wh)
 
-    to_stock = stock_map.get(to_wh.id)
-    if not to_stock:
-        to_stock = InventoryStock.objects.create(
-            product=product,
-            warehouse=to_wh,
-            quantity=0,
-            version=1,
-        )
-
-    old_from = model_to_dict(from_stock)
-    old_to = model_to_dict(to_stock)
-
-    transfer_id = uuid4()
-
-    # OUT from source
+    # OUT
     from_stock.quantity -= quantity
     from_stock.version += 1
     from_stock.save()
@@ -189,12 +172,12 @@ def transfer_stock_service(
         change=-quantity,
         balance_after=from_stock.quantity,
         reference_type="TRANSFER_OUT",
-        reference_id=transfer_id,
+        reference_id=to_stock.id,
         reason=reason,
         created_by=actor_id,
     )
 
-    # IN to destination
+    # IN
     to_stock.quantity += quantity
     to_stock.version += 1
     to_stock.save()
@@ -205,29 +188,20 @@ def transfer_stock_service(
         change=quantity,
         balance_after=to_stock.quantity,
         reference_type="TRANSFER_IN",
-        reference_id=transfer_id,
+        reference_id=from_stock.id,
         reason=reason,
         created_by=actor_id,
     )
 
-    # Audits
     AuditLogger.log(
-        entity="inventory_stock",
-        entity_id=from_stock.id,
-        action=AuditAction.UPDATE,
-        actor_id=actor_id,
-        old_data=old_from,
-        new_data=model_to_dict(from_stock),
-    )
-
-    AuditLogger.log(
-        entity="inventory_stock",
+        entity="inventory_transfer",
         entity_id=to_stock.id,
         action=AuditAction.UPDATE,
         actor_id=actor_id,
-        old_data=old_to,
-        new_data=model_to_dict(to_stock),
+        old_data={"from_qty": from_stock.quantity + quantity},
+        new_data={"to_qty": to_stock.quantity},
     )
+
 
 
 

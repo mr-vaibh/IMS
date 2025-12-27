@@ -1,25 +1,9 @@
 from django.contrib import admin
 from inventory.models import (
-    Product,
-    Warehouse,
     InventoryStock,
     InventoryLedger,
     InventoryAdjustment,
 )
-
-
-@admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
-    list_display = ("name", "sku", "created_at")
-    search_fields = ("name", "sku")
-    readonly_fields = ("created_at",)
-
-
-@admin.register(Warehouse)
-class WarehouseAdmin(admin.ModelAdmin):
-    list_display = ("name", "code", "created_at")
-    search_fields = ("name", "code")
-    readonly_fields = ("created_at",)
 
 @admin.register(InventoryStock)
 class InventoryStockAdmin(admin.ModelAdmin):

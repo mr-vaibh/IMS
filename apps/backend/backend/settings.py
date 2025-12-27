@@ -29,7 +29,7 @@ SECRET_KEY = 'django-insecure-1@gbpfei4ilw$%di79sv@yl56vookkz86#e3k=9t7pr)xrqvi4
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -48,9 +48,9 @@ INSTALLED_APPS = [
     'users',
     'rbac.apps.RbacConfig',
     'api',
+    'company.apps.CompanyConfig',
+    'inventory.apps.InventoryConfig',
 ]
-
-INSTALLED_APPS += ['inventory']
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (

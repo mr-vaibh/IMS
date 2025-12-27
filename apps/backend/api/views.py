@@ -17,6 +17,24 @@ from core.audit.enums import AuditAction
 from rbac.services import user_has_permission
 from inventory.models import Product, InventoryStock, InventoryLedger, Warehouse
 
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def my_profile(request):
+    profile = request.user.userprofile
+
+    print(profile.company.name if profile.company else "No Company")
+
+    return Response({
+        "username": request.user.username,
+        "role": profile.role.name if profile.role else None,
+        "email": request.user.email,
+        "full_name": profile.full_name,
+        "company_id": str(profile.company.id) if profile.company else None,
+        "company_name": profile.company.name if profile.company else None,
+    })
+
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def my_permissions(request):
@@ -37,9 +55,21 @@ def inventory_list(request):
     if not user_has_permission(request.user, "inventory.view"):
         return Response({"message": "Forbidden"}, status=403)
 
+    profile = request.user.userprofile
+    company = profile.company
+
+    if not company:
+        return Response(
+            {"message": "No active company selected"},
+            status=400
+        )
+
     qs = (
         InventoryStock.objects
         .select_related("product", "warehouse")
+        .filter(
+            warehouse__company=company,
+        )
         .order_by("product__name")
     )
 
@@ -112,6 +142,7 @@ def product_list_create(request):
 
     return Response({"id": p.id, "name": p.name, "sku": p.sku}, status=201)
 
+
 @api_view(["PUT", "DELETE"])
 @permission_classes([IsAuthenticated])
 def product_update_delete(request, pk):
@@ -163,22 +194,60 @@ def product_update_delete(request, pk):
 # ================ Warehouse Views =================
 
 
+from uuid import uuid4
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
+
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def warehouse_list_create(request):
+    profile = request.user.userprofile
+    company = profile.company
+
+    if not company:
+        return Response(
+            {"message": "No active company selected"},
+            status=400
+        )
+
+    # --------------------
+    # GET: list warehouses
+    # --------------------
     if request.method == "GET":
-        qs = Warehouse.objects.filter(deleted_at__isnull=True)
+        qs = (
+            Warehouse.objects
+            .filter(
+                company=company,
+                deleted_at__isnull=True
+            )
+            .order_by("name")
+        )
+
         return Response([
-            {"id": w.id, "name": w.name, "code": w.code}
+            {
+                "id": w.id,
+                "name": w.name,
+                "code": w.code,
+            }
             for w in qs
         ])
 
+    # --------------------
+    # POST: create warehouse
+    # --------------------
     if not user_has_permission(request.user, "warehouse.manage"):
         return Response({"message": "Forbidden"}, status=403)
 
+    name = request.data.get("name")
+    if not name:
+        raise ValidationError("Warehouse name is required")
+
     w = Warehouse.objects.create(
-        name=request.data["name"],
-        code="WH-" + uuid4().hex[:8]
+        company=company,               # 🔥 derived, not from request
+        name=name,
+        code="WH-" + uuid4().hex[:8],
     )
 
     AuditLogger.log(
@@ -189,10 +258,18 @@ def warehouse_list_create(request):
         new_data={
             "name": w.name,
             "code": w.code,
+            "company_id": str(company.id),
         },
     )
-    
-    return Response({"id": w.id, "name": w.name, "code": w.code}, status=201)
+
+    return Response(
+        {
+            "id": w.id,
+            "name": w.name,
+            "code": w.code,
+        },
+        status=201
+    )
 
 
 @api_view(["DELETE"])
@@ -222,27 +299,14 @@ def transfer_stock(request):
     if not user_has_permission(request.user, "inventory.transfer"):
         return Response({"message": "Forbidden"}, status=403)
 
-    data = request.data
-
-    try:
-        transfer_stock_service(
-            actor_id=request.user.id,
-            product_id=data["product_id"],
-            from_warehouse_id=data["from_warehouse_id"],
-            to_warehouse_id=data["to_warehouse_id"],
-            quantity=int(data["quantity"]),
-            reason=data.get("reason"),
-        )
-    except KeyError as e:
-        return Response(
-            {"message": f"Missing field: {str(e)}"},
-            status=400,
-        )
-    except ValueError as e:
-        return Response(
-            {"message": str(e)},
-            status=400,
-        )
+    transfer_stock_service(
+        actor_id=request.user.id,
+        product_id=request.data["product_id"],
+        from_warehouse_id=request.data["from_warehouse_id"],
+        to_warehouse_id=request.data["to_warehouse_id"],
+        quantity=int(request.data["quantity"]),
+        reason=request.data.get("reason"),
+    )
 
     return Response({"success": True})
 

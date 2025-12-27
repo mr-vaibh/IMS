@@ -1,7 +1,9 @@
 from django.urls import path
 from api import views
+from company import views as company_views
 
 urlpatterns = [
+    path("me", views.my_profile),
     path("me/permissions", views.my_permissions),
 
     path("inventory", views.inventory_list),
@@ -14,6 +16,9 @@ urlpatterns = [
 
     path("warehouses", views.warehouse_list_create),
     path("warehouses/<uuid:pk>", views.warehouse_delete),
+
+    path("companies", company_views.company_list_create),
+    path("companies/<uuid:company_id>/warehouses", company_views.company_warehouses),
 
 
     path("audit", views.audit_list),

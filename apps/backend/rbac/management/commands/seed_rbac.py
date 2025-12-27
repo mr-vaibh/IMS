@@ -53,3 +53,7 @@ class Command(BaseCommand):
                 )
 
         self.stdout.write(self.style.SUCCESS("RBAC seeded successfully"))
+
+
+# Usage
+# python manage.py seed_rbac
