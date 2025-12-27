@@ -29,16 +29,31 @@ export default function WarehouseSelect({
   const [options, setOptions] = useState<Option[]>([]);
   const [selected, setSelected] = useState<Option | null>(null);
 
+  // 🔹 Sync backend warehouses → options (MERGE, don’t replace)
   useEffect(() => {
-    const opts = warehouses.map((w) => ({
-      value: w.id,
-      label: w.code ? `${w.name} (${w.code})` : w.name,
-    }));
-    setOptions(opts);
+    setOptions((prev) => {
+      const base = warehouses.map((w) => ({
+        value: w.id,
+        label: `${w.name} (${w.code})`
+      }));
 
-    const found = opts.find((o) => o.value === value) || null;
-    setSelected(found);
-  }, [warehouses, value]);
+      const merged = [
+        ...base,
+        ...prev.filter(
+          (o) => !base.some((b) => b.value === o.value)
+        ),
+      ];
+
+      return merged;
+    });
+  }, [warehouses]);
+
+  // 🔹 Sync selected from value (SOURCE = options)
+  useEffect(() => {
+    setSelected((prev) => {
+      return options.find((o) => o.value === value) ?? prev;
+    });
+  }, [value, options]);
 
   async function handleCreate(inputValue: string) {
     const res = await apiFetchClient("/warehouses", {
@@ -48,9 +63,10 @@ export default function WarehouseSelect({
 
     const newOption: Option = {
       value: res.id,
-      label: res.code ? `${res.name} (${res.code})` : res.name,
+      label: `${res.name} (${res.code})`,
     };
 
+    // 🔥 critical: add option AND select the SAME object
     setOptions((prev) => [...prev, newOption]);
     setSelected(newOption);
     onChange(res.id);

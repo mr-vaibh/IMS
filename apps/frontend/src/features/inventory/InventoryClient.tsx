@@ -34,7 +34,19 @@ export default function InventoryClient() {
 
   return (
     <div className="p-6">
-      <h1 className="text-xl font-semibold mb-4">Inventory</h1>
+      <div className="flex items-center mb-4">
+        <h1 className="text-xl font-semibold">Inventory</h1>
+
+        <button
+          className="px-4 py-2 ml-4 text-sm font-medium border"
+          onClick={() => {
+            window.location.href = "/inventory/stock-in";
+          }}
+        >
+          + Add Stock
+        </button>
+      </div>
+
       <InventoryTable rows={rows} warehouses={warehouses} />
     </div>
   );

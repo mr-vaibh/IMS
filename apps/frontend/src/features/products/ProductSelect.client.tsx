@@ -7,6 +7,7 @@ import { apiFetchClient } from "@/lib/api.client";
 interface Product {
   id: string;
   name: string;
+  sku: string;
 }
 
 interface Option {
@@ -33,7 +34,7 @@ export default function ProductSelect({
     setOptions((prev) => {
       const base = products.map((p) => ({
         value: p.id,
-        label: p.name,
+        label: `${p.name}`,
       }));
 
       // keep locally created options
