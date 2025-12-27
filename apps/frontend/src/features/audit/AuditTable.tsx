@@ -15,7 +15,7 @@ export default function AuditTable({ audits }: { audits: AuditLog[] }) {
             <th className="p-2 text-left">Time</th>
             <th className="p-2 text-left">Entity</th>
             <th className="p-2 text-left">Action</th>
-            <th className="p-2 text-left">Actor</th>
+            <th className="p-2 text-left">User</th>
             <th className="p-2 text-left">Details</th>
           </tr>
         </thead>

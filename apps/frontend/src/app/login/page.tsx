@@ -2,17 +2,19 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { refresh } = useAuth(); // This is the key for updating permissions
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Get redirect target from middleware
+  // Redirect target from middleware
   const next = searchParams.get("next") || "/inventory";
 
   async function submit(e: React.FormEvent) {
@@ -24,7 +26,7 @@ export default function LoginPage() {
       const res = await fetch("http://localhost:8000/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        credentials: "include", // Required for cookie-based auth
         body: JSON.stringify({ username, password }),
       });
 
@@ -32,6 +34,14 @@ export default function LoginPage() {
         throw new Error("Invalid credentials");
       }
 
+      /**
+       * CRITICAL STEP
+       * Fetch permissions immediately after login
+       * so Navbar updates without reload
+       */
+      await refresh();
+
+      // Redirect to intended page
       router.replace(next);
     } catch (err: any) {
       setError(err.message || "Login failed");

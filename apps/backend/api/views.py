@@ -346,7 +346,7 @@ def stock_out(request):
 
 
 
-# ================ Login Views =================
+# ================ Authentication Views =================
 
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.response import Response
@@ -378,3 +378,13 @@ class CookieTokenObtainPairView(TokenObtainPairView):
         )
 
         return response
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def logout(request):
+    response = Response({"success": True})
+
+    response.delete_cookie("access_token", path="/")
+    response.delete_cookie("refresh_token", path="/")
+
+    return response
