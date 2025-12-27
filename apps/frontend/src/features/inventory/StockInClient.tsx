@@ -57,11 +57,15 @@ export default function StockInClient() {
   const canSubmit = productId && warehouseId && quantity > 0;
 
   return (
-    <div className="max-w-md space-y-3">
-      <h1 className="text-xl font-semibold">Stock In</h1>
+    <div className="card p-6 max-w-md space-y-4">
+      <div className="flex flex-col items-center justify-between">
+        <h1 className="text-2xl font-semibold">Stock In</h1>
+        {companyId && <div className="text-sm text-muted">Company: {companyId}</div>}
+      </div>
 
-      <div className="flex gap-2 items-start">
+      <div className="flex gap-3 items-end">
         <div className="flex-1">
+          <label className="block text-sm text-muted mb-1">Warehouse</label>
           <WarehouseSelect
             warehouses={warehouses}
             value={warehouseId}
@@ -70,15 +74,17 @@ export default function StockInClient() {
         </div>
 
         <button
+          type="button"
           onClick={() => setShowWarehouseModal(true)}
-          className="border px-3 py-2"
+          className="btn-ghost px-3 py-2 whitespace-nowrap"
         >
           + Add
         </button>
       </div>
 
-      <div className="flex gap-2 items-start">
+      <div className="flex gap-3 items-end">
         <div className="flex-1">
+          <label className="block text-sm text-muted mb-1">Product</label>
           <ProductSelect
             products={products}
             value={productId}
@@ -89,26 +95,33 @@ export default function StockInClient() {
         <button
           type="button"
           onClick={() => setShowProductModal(true)}
-          className="border px-3 py-2 whitespace-nowrap"
+          className="btn-ghost px-3 py-2 whitespace-nowrap"
         >
           + Add
         </button>
       </div>
 
-      <input
-        type="number"
-        className="border p-2 w-full"
-        placeholder="Quantity"
-        onChange={(e) => setQuantity(+e.target.value)}
-      />
+      <div>
+        <label className="block text-sm text-muted mb-1">Quantity</label>
+        <input
+          type="number"
+          className="border p-2 w-full rounded"
+          placeholder="Quantity"
+          onChange={(e) => setQuantity(+e.target.value)}
+        />
+      </div>
 
-      <button
-        className="border px-4 py-2"
-        onClick={submit}
-        disabled={!canSubmit}
-      >
-        Submit
-      </button>
+      <div className="flex justify-end">
+        <button
+          onClick={submit}
+          disabled={!canSubmit}
+          className={`btn-primary ${
+            !canSubmit ? "opacity-60 cursor-not-allowed" : ""
+          }`}
+        >
+          Submit
+        </button>
+      </div>
 
       {showProductModal && (
         <ProductCreateModal

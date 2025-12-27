@@ -38,7 +38,7 @@ export default function InventoryClient() {
         <h1 className="text-xl font-semibold">Inventory</h1>
 
         <button
-          className="px-4 py-2 ml-4 text-sm font-medium border"
+          className="btn-ghost px-4 py-2 ml-4 text-sm font-medium border"
           onClick={() => {
             window.location.href = "/inventory/stock-in";
           }}
