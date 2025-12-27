@@ -7,17 +7,17 @@ import { useAuth } from "@/lib/auth-context";
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { refresh } = useAuth(); // This is the key for updating permissions
+  const { refresh } = useAuth();
 
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [username, setUsername] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
 
   // Redirect target from middleware
   const next = searchParams.get("next") || "/inventory";
 
-  async function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setError("");
@@ -26,19 +26,16 @@ export default function LoginPage() {
       const res = await fetch("http://localhost:8000/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include", // Required for cookie-based auth
+        credentials: "include",
         body: JSON.stringify({ username, password }),
       });
 
       if (!res.ok) {
-        throw new Error("Invalid credentials");
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.detail || data?.message || "Invalid credentials");
       }
 
-      /**
-       * CRITICAL STEP
-       * Fetch permissions immediately after login
-       * so Navbar updates without reload
-       */
+      // Update permissions so Navbar reflects new state immediately
       await refresh();
 
       // Redirect to intended page
@@ -51,17 +48,17 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
       <form
         onSubmit={submit}
-        className="border p-6 w-80 rounded space-y-4"
+        className="w-80 space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-md"
       >
-        <h1 className="text-lg font-semibold">Login</h1>
+        <h1 className="text-lg font-semibold text-slate-800">Login</h1>
 
-        {error && <p className="text-red-600 text-sm">{error}</p>}
+        {error && <p className="text-sm text-red-600">{error}</p>}
 
         <input
-          className="border p-2 w-full"
+          className="w-full rounded border border-slate-300 p-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
@@ -70,7 +67,7 @@ export default function LoginPage() {
 
         <input
           type="password"
-          className="border p-2 w-full"
+          className="w-full rounded border border-slate-300 p-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -80,7 +77,9 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className={`w-full btn-primary ${loading ? 'opacity-60' : ''}`}
+          className={`w-full rounded bg-blue-600 py-2 text-white transition hover:bg-blue-700 ${
+            loading ? "opacity-60 cursor-not-allowed" : ""
+          }`}
         >
           {loading ? "Logging in..." : "Login"}
         </button>
