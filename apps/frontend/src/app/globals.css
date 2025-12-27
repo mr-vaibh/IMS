@@ -172,7 +172,7 @@ body {
 }
 
 /* Inputs & selects */
-.input, input[type="text"], input[type="number"], textarea, select {
+.input, input, textarea, select {
   width: 100%;
   padding: 0.55rem 0.75rem;
   border-radius: 10px;
@@ -182,7 +182,7 @@ body {
   transition: box-shadow .14s ease, border-color .14s ease, transform .08s ease;
   font-size: 14px;
 }
-.input:focus, input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:focus {
+.input:focus, input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 10px 30px rgba(37,99,235,0.08);
@@ -193,6 +193,6 @@ body {
 .form-col { flex: 1; }
 
 /* Modal tweaks */
-.modal-panel { padding: 18px; border-radius: 12px; }
+.modal-panel { border-radius: 12px; }
 .modal-panel h2 { margin: 0 0 6px 0; }
 

@@ -110,7 +110,7 @@ export default function TransferModal({
           className="border p-2 w-full"
           placeholder="Quantity"
           onChange={(e) => setQuantity(+e.target.value)}
-        />
+          />
 
         <input
           className="border p-2 w-full"

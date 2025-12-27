@@ -26,7 +26,7 @@ export default function AdjustmentsPage() {
 
         <button
           onClick={() => setShowModal(true)}
-          className="border px-3 py-1"
+          className="btn-ghost border px-3 py-1"
         >
           Request Adjustment
         </button>
