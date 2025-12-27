@@ -39,7 +39,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-6 py-3 flex gap-4 items-center">
         {/* Display the company name */}
         <div className="ml-6 w-64">
-          <span className="text-lg font-medium text-gray-700">
+          <span className="text-lg font-bold text-gray-700">
             {user ? `${user.company_name}` : "No Company Selected"}
           </span>
         </div>
@@ -52,6 +52,10 @@ export default function Navbar() {
 
         {hasPermission(perms, "inventory.view_audit") && (
           <Link href="/audit">Audit</Link>
+        )}
+
+        {hasPermission(perms, "inventory.view_adjustments") && (
+          <Link href="/adjustments">Adjustments</Link>
         )}
 
         <div className="ml-auto flex items-center gap-4">

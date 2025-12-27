@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { apiFetchClient } from "@/lib/api.client";
+import { apiFetchClient, ApiError } from "@/lib/api.client";
+
+import { toast } from "sonner";
 
 import CompanySelect from "@/features/companies/CompanySelect";
 import WarehouseSelect from "@/features/warehouses/WarehouseSelect";
@@ -40,19 +42,28 @@ export default function TransferModal({
   }, [companyId]);
 
   async function submit() {
-    await apiFetchClient("/inventory/transfer", {
-      method: "POST",
-      body: JSON.stringify({
-        product_id: productId,
-        from_warehouse_id: fromWarehouseId,
-        to_warehouse_id: toWarehouseId,
-        quantity,
-        reason,
-      }),
-    });
+    try {
+      await apiFetchClient("/inventory/transfer", {
+        method: "POST",
+        body: JSON.stringify({
+          product_id: productId,
+          from_warehouse_id: fromWarehouseId,
+          to_warehouse_id: toWarehouseId,
+          quantity,
+          reason,
+        }),
+      });
 
-    onClose();
-    window.location.reload();
+      toast.success("Stock transferred");
+      onClose();
+      window.location.reload();
+    } catch (err) {
+      if (err instanceof ApiError) {
+        toast.error(err.message);
+      } else {
+        toast.error("Transfer failed");
+      }
+    }
   }
 
   const canSubmit = companyId && toWarehouseId && quantity > 0;

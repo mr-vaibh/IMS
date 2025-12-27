@@ -10,6 +10,11 @@ urlpatterns = [
     path("inventory/stock-in", views.stock_in),
     path("inventory/stock-out", views.stock_out),
     path("inventory/transfer", views.transfer_stock),
+
+    path("inventory/adjustments", views.adjustment_list),
+    path("inventory/adjustments/request", views.request_adjustment),
+    path("inventory/adjustments/<uuid:pk>/approve", views.approve_adjustment),
+    path("inventory/adjustments/<uuid:pk>/reject", views.reject_adjustment),
     
     path("products", views.product_list_create),
     path("products/<uuid:pk>", views.product_update_delete),
@@ -19,7 +24,6 @@ urlpatterns = [
 
     path("companies", company_views.company_list_create),
     path("companies/<uuid:company_id>/warehouses", company_views.company_warehouses),
-
 
     path("audit", views.audit_list),
 

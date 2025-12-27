@@ -32,6 +32,7 @@ class Command(BaseCommand):
                 "inventory.adjust",
                 "inventory.approve_adjustment",
                 "inventory.view_audit",
+                "inventory.view_adjustments",
             ],
             "Staff": [
                 "inventory.view",

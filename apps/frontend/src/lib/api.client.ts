@@ -1,5 +1,20 @@
 "use client";
 
+export class ApiError extends Error {
+  status: number;
+  code?: string;
+
+  constructor(
+    message: string,
+    status: number,
+    code?: string
+  ) {
+    super(message);
+    this.status = status;
+    this.code = code;
+  }
+}
+
 export async function apiFetchClient(
   path: string,
   options: RequestInit = {}
@@ -14,25 +29,30 @@ export async function apiFetchClient(
   });
 
   const text = await res.text();
+  let data: any = null;
 
-  const authPages = ["/login", "/signup"];
-  if (
-    (res.status === 401) &&
-    !authPages.includes(window.location.pathname)
-  ) {
-    window.location.href = "/login";
-    return;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = null;
   }
 
-  if (res.status === 403) {
-    alert("You do not have permission to perform this action.");
-    return;
+  // 🔒 auth redirect (still OK to centralize)
+  if (res.status === 401) {
+    if (!["/login", "/signup"].includes(window.location.pathname)) {
+      window.location.href = "/login";
+    }
+    throw new ApiError("Unauthorized", 401);
   }
 
-
+  // ❌ any other error → THROW
   if (!res.ok) {
-    throw new Error(`HTTP ${res.status}: ${text}`);
+    throw new ApiError(
+      data?.message || `Request failed`,
+      res.status,
+      data?.code
+    );
   }
 
-  return text ? JSON.parse(text) : {};
+  return data;
 }

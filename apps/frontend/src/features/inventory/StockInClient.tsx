@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { apiFetchClient } from "@/lib/api.client";
+import { apiFetchClient, ApiError } from "@/lib/api.client";
 
 import ProductSelect from "@/features/products/ProductSelect";
 import WarehouseSelect from "@/features/warehouses/WarehouseSelect";
@@ -10,6 +10,7 @@ import ProductCreateModal from "@/features/products/ProductCreateModal";
 import WarehouseCreateModal from "@/features/warehouses/WarehousesCreateModal";
 
 import { getActiveCompany } from "@/lib/company";
+import { toast } from "sonner";
 
 export default function StockInClient() {
   const [companyId, setCompanyId] = useState<string | null>(null);
@@ -33,17 +34,23 @@ export default function StockInClient() {
   }, []);
 
   async function submit() {
-    const res = await apiFetchClient("/inventory/stock-in", {
-      method: "POST",
-      body: JSON.stringify({
-        product_id: productId,
-        warehouse_id: warehouseId,
-        quantity,
-      }),
-    });
+    try {
+      await apiFetchClient("/inventory/stock-in", {
+        method: "POST",
+        body: JSON.stringify({
+          product_id: productId,
+          warehouse_id: warehouseId,
+          quantity,
+        }),
+      });
 
-    if (res?.status === 201) {
-      alert("Stock added");
+      toast.success("Stock added");
+    } catch (err) {
+      if (err instanceof ApiError) {
+        toast.error(err.message);
+      } else {
+        toast.error("Something went wrong");
+      }
     }
   }
 

@@ -15,7 +15,23 @@ from core.audit.models import AuditLog
 from core.audit.logger import AuditLogger
 from core.audit.enums import AuditAction
 from rbac.services import user_has_permission
-from inventory.models import Product, InventoryStock, InventoryLedger, Warehouse
+from inventory.models import Product, InventoryStock, InventoryLedger, Warehouse, InventoryAdjustment
+from inventory.services import (
+    request_adjustment_service,
+    approve_adjustment_service,
+    reject_adjustment_service,
+)
+
+
+# Generic error response
+
+def error(code, message, status=400):
+    return Response(
+        {"code": code, "message": message},
+        status=status
+    )
+
+# =======================
 
 
 @api_view(["GET"])
@@ -464,6 +480,104 @@ def stock_out(request):
         return Response({"message": str(e)}, status=400)
 
     return Response({"message": "Stock removed"})
+
+
+
+# ================ Adjustment Views =====================
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def adjustment_list(request):
+    if not user_has_permission(request.user, "inventory.view_adjustments"):
+        return Response({"message": "Forbidden"}, status=403)
+
+    profile = request.user.userprofile
+    company = profile.company
+
+    if not company:
+        return Response(
+            {"message": "No active company selected"},
+            status=400
+        )
+
+    qs = (
+        InventoryAdjustment.objects
+        .select_related("product", "warehouse")
+        .filter(warehouse__company=company)
+        .order_by("-created_at")
+    )
+
+    items, meta = paginate(qs, request)
+
+    return Response({
+        "items": [
+            {
+                "id": a.id,
+                "product_name": a.product.name,
+                "warehouse_name": a.warehouse.name,
+                "delta": a.delta,
+                "reason": a.reason,
+                "status": a.status,
+                "requested_by": str(a.requested_by),
+                "approved_by": str(a.approved_by) if a.approved_by else None,
+                "created_at": a.created_at,
+            }
+            for a in items
+        ],
+        "meta": meta,
+    })
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def request_adjustment(request):
+    if not user_has_permission(request.user, "inventory.adjust"):
+        return Response({"message": "Forbidden"}, status=403)
+
+    try:
+        adj = request_adjustment_service(
+            product_id=request.data["product_id"],
+            warehouse_id=request.data["warehouse_id"],
+            delta=int(request.data["delta"]),
+            reason=request.data["reason"],
+            actor_id=request.user.id,
+        )
+    except Exception as e:
+        return Response({"message": str(e)}, status=400)
+
+    return Response(
+        {"id": adj.id, "status": adj.status},
+        status=201
+    )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def approve_adjustment(request, pk):
+    try:
+        approve_adjustment_service(
+            adjustment_id=pk,
+            actor_id=request.user.id,
+        )
+    except Exception as e:
+        return Response({"message": str(e)}, status=400)
+
+    return Response({"status": "APPROVED"})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def reject_adjustment(request, pk):
+    try:
+        reject_adjustment_service(
+            adjustment_id=pk,
+            actor_id=request.user.id,
+        )
+    except Exception as e:
+        return Response({"message": str(e)}, status=400)
+
+    return Response({"status": "REJECTED"})
+
 
 
 
