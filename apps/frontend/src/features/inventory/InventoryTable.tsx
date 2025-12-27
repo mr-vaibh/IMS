@@ -28,7 +28,10 @@ export default function InventoryTable({
       </thead>
       <tbody>
         {rows.map((r) => (
-          <tr key={`${r.product_id}-${r.warehouse_id}`}>
+          <tr
+            key={`${r.product_id}-${r.warehouse_id}`}
+            className={r.quantity === 0 ? "bg-red-100" : ""}
+          >
             <td className="p-2">{r.product_name}</td>
             <td className="p-2">{r.warehouse_name}</td>
             <td className="p-2 text-right">{r.quantity}</td>
