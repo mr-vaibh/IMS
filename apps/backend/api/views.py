@@ -43,8 +43,6 @@ def error(code, message, status=400):
 def my_profile(request):
     profile = request.user.userprofile
 
-    print(profile.company.name if profile.company else "No Company")
-
     return Response({
         "username": request.user.username,
         "role": profile.role.name if profile.role else None,
@@ -59,7 +57,6 @@ def my_profile(request):
 @permission_classes([IsAuthenticated])
 def my_permissions(request):
     role = request.user.userprofile.role
-    print("AUTH USER:", request.user, request.user.is_authenticated)
     perms = list(
         RolePermission.objects
         .filter(role=role)
