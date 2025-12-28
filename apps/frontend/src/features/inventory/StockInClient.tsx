@@ -14,6 +14,7 @@ import { toast } from "sonner";
 
 export default function StockInClient() {
   const [companyId, setCompanyId] = useState<string | null>(null);
+  const [company, setCompany] = useState<{ company_name: string } | null>(null);
 
   const [products, setProducts] = useState<any[]>([]);
   const [warehouses, setWarehouses] = useState<any[]>([]);
@@ -26,6 +27,12 @@ export default function StockInClient() {
 
   useEffect(() => {
     setCompanyId(getActiveCompany());
+  }, []);
+
+  useEffect(() => {
+    apiFetchClient("/me")
+      .then(setCompany)
+      .catch(() => setCompany(null));
   }, []);
 
   useEffect(() => {
@@ -60,7 +67,12 @@ export default function StockInClient() {
     <div className="card p-6 max-w-md space-y-4">
       <div className="flex flex-col items-center justify-between">
         <h1 className="text-2xl font-semibold">Stock In</h1>
-        {companyId && <div className="text-sm text-muted">Company: {companyId}</div>}
+        {company && (
+          <div className="text-sm text-muted">
+            Stock coming in:{" "}
+            <span className="font-bold">{company.company_name}</span>
+          </div>
+        )}
       </div>
 
       <div className="flex gap-3 items-end">

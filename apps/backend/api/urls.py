@@ -8,6 +8,7 @@ urlpatterns = [
 
     path("inventory", views.inventory_list),
     path("inventory/stock-in", views.stock_in),
+    path("inventory/stock-in/bulk", views.bulk_stock_in),
     path("inventory/stock-out", views.stock_out),
     path("inventory/transfer", views.transfer_stock),
 

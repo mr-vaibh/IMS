@@ -20,6 +20,7 @@ from inventory.services import (
     request_adjustment_service,
     approve_adjustment_service,
     reject_adjustment_service,
+    bulk_stock_in_service,
 )
 
 
@@ -141,6 +142,7 @@ def product_list_create(request):
         return Response({"message": "Forbidden"}, status=403)
 
     p = Product.objects.create(
+        company=request.user.userprofile.company,
         name=request.data["name"],
         sku=request.data.get("sku", f"PRD-{uuid4().hex[:8]}"),
     )
@@ -480,6 +482,58 @@ def stock_out(request):
         return Response({"message": str(e)}, status=400)
 
     return Response({"message": "Stock removed"})
+
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def bulk_stock_in(request):
+    if not user_has_permission(request.user, "inventory.stock_in"):
+        return Response(
+            {"message": "Forbidden"},
+            status=403
+        )
+
+    profile = request.user.userprofile
+    company = profile.company
+
+    if not company:
+        return Response(
+            {"message": "No active company selected"},
+            status=400
+        )
+
+    warehouse_id = request.data.get("warehouse_id")
+    items = request.data.get("items", [])
+    reference = request.data.get("reference", "BARCODE_SCAN")
+
+    if not warehouse_id:
+        return Response(
+            {"message": "warehouse_id is required"},
+            status=400
+        )
+
+    try:
+        result = bulk_stock_in_service(
+            actor_id=request.user.id,
+            company=company,
+            warehouse_id=warehouse_id,
+            items=items,
+            reference=reference,
+        )
+    except ValueError as e:
+        return Response(
+            {"message": str(e)},
+            status=400
+        )
+
+    return Response(
+        {
+            "success": True,
+            "processed": result["processed"],
+            "reference_id": result["reference_id"],
+        }
+    )
 
 
 

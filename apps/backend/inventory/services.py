@@ -132,6 +132,84 @@ def stock_out_service(
 
 
 @transaction.atomic
+def bulk_stock_in_service(
+    *,
+    actor_id,
+    company,
+    warehouse_id,
+    items,
+    reference="BULK_STOCK_IN",
+):
+    if not items:
+        raise ValueError("No items provided")
+
+    # Lock warehouse
+    try:
+        warehouse = (
+            Warehouse.objects
+            .select_for_update()
+            .get(id=warehouse_id, company=company)
+        )
+    except Warehouse.DoesNotExist:
+        raise ValueError("Invalid warehouse for active company")
+
+    reference_id = uuid4()
+
+    for item in items:
+        product_id = item.get("product_id")
+        quantity = int(item.get("quantity", 0))
+
+        if quantity <= 0:
+            raise ValueError("Quantity must be greater than zero")
+
+        try:
+            product = Product.objects.get(
+                id=product_id,
+                deleted_at__isnull=True,
+            )
+        except Product.DoesNotExist:
+            raise ValueError("Invalid product")
+
+        # Lock or create stock row
+        stock, _ = InventoryStock.objects.select_for_update().get_or_create(
+            product=product,
+            warehouse=warehouse,
+            defaults={"quantity": 0},
+        )
+
+        old_stock = model_to_dict(stock)
+
+        stock.quantity += quantity
+        stock.version += 1
+        stock.save()
+
+        InventoryLedger.objects.create(
+            product=product,
+            warehouse=warehouse,
+            change=quantity,
+            balance_after=stock.quantity,
+            reference_type=reference,
+            reference_id=reference_id,
+            created_by=actor_id,
+        )
+
+        AuditLogger.log(
+            entity="inventory_stock",
+            entity_id=stock.id,
+            action=AuditAction.UPDATE,
+            actor_id=actor_id,
+            old_data=old_stock,
+            new_data=model_to_dict(stock),
+        )
+
+    return {
+        "processed": len(items),
+        "reference_id": str(reference_id),
+    }
+
+
+
+@transaction.atomic
 def transfer_stock_service(
     *,
     actor_id,
