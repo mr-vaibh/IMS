@@ -6,3 +6,7 @@ User can VIEW companies WHERE:
 Mutating data (CUD)
 User can CREATE / UPDATE / DELETE data ONLY IF:
 - request.user.userprofile.company == target.company
+
+### RBAC
+http://localhost:8000/rbac/seed-rbac/
+Password - DOB

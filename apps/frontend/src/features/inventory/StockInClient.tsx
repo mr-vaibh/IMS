@@ -5,9 +5,11 @@ import { apiFetchClient, ApiError } from "@/lib/api.client";
 
 import ProductSelect from "@/features/products/ProductSelect";
 import WarehouseSelect from "@/features/warehouses/WarehouseSelect";
+import SupplierSelect from "@/features/suppliers/SupplierSelect";
 
 import ProductCreateModal from "@/features/products/ProductCreateModal";
 import WarehouseCreateModal from "@/features/warehouses/WarehousesCreateModal";
+import SupplierCreateModal from "@/features/suppliers/SupplierCreateModal";
 
 import { getActiveCompany } from "@/lib/company";
 import { toast } from "sonner";
@@ -25,8 +27,16 @@ export default function StockInClient() {
   const [showProductModal, setShowProductModal] = useState(false);
   const [showWarehouseModal, setShowWarehouseModal] = useState(false);
 
+  const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [supplierId, setSupplierId] = useState("");
+  const [showSupplierModal, setShowSupplierModal] = useState(false);
+
   useEffect(() => {
     setCompanyId(getActiveCompany());
+  }, []);
+
+  useEffect(() => {
+    apiFetchClient("/suppliers").then(setSuppliers);
   }, []);
 
   useEffect(() => {
@@ -47,6 +57,7 @@ export default function StockInClient() {
         body: JSON.stringify({
           product_id: productId,
           warehouse_id: warehouseId,
+          supplier_id: supplierId || null,
           quantity,
         }),
       });
@@ -66,10 +77,9 @@ export default function StockInClient() {
   return (
     <div className="card p-6 max-w-md space-y-4">
       <div className="flex flex-col items-center justify-between">
-        <h1 className="text-2xl font-semibold">Stock In</h1>
+        <h1 className="text-2xl font-semibold">Stock Manager</h1>
         {company && (
           <div className="text-sm text-muted">
-            Stock coming in:{" "}
             <span className="font-bold">{company.company_name}</span>
           </div>
         )}
@@ -113,6 +123,27 @@ export default function StockInClient() {
         </button>
       </div>
 
+      <div className="flex gap-3 items-end">
+        <div className="flex-1">
+          <label className="block text-sm text-muted mb-1">
+            Supplier (optional)
+          </label>
+          <SupplierSelect
+            suppliers={suppliers}
+            value={supplierId}
+            onChange={setSupplierId}
+          />
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setShowSupplierModal(true)}
+          className="btn-ghost px-3 py-2 whitespace-nowrap"
+        >
+          + Add
+        </button>
+      </div>
+
       <div>
         <label className="block text-sm text-muted mb-1">Quantity</label>
         <input
@@ -131,7 +162,7 @@ export default function StockInClient() {
             !canSubmit ? "opacity-60 cursor-not-allowed" : ""
           }`}
         >
-          Submit
+          Add Stock
         </button>
       </div>
 
@@ -152,6 +183,16 @@ export default function StockInClient() {
           onCreated={(w) => {
             setWarehouses((prev) => [...prev, w]);
             setWarehouseId(w.id);
+          }}
+        />
+      )}
+
+      {showSupplierModal && (
+        <SupplierCreateModal
+          onClose={() => setShowSupplierModal(false)}
+          onCreated={(s) => {
+            setSuppliers((prev) => [...prev, s]);
+            setSupplierId(s.id);
           }}
         />
       )}

@@ -47,7 +47,7 @@ export default function WarehouseCreateModal({
         {error && <p className="text-red-600 text-sm">{error}</p>}
 
         <input className="border p-2 w-full" placeholder="Warehouse name" value={name} onChange={e => setName(e.target.value)} />
-        <input className="border p-2 w-full" placeholder="Code (WH-001)" value={code} onChange={e => setCode(e.target.value)} />
+        <input className="border uppercase p-2 w-full" placeholder="Code (WH-001)" value={code} onChange={e => setCode(e.target.value)} />
 
         <div className="flex justify-end gap-2 pt-2">
           <button onClick={onClose} className="border px-3 py-1">Cancel</button>

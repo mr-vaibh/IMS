@@ -43,7 +43,7 @@ export default function InventoryClient() {
             window.location.href = "/inventory/stock-in";
           }}
         >
-          + Add Stock
+          Stock Manager
         </button>
       </div>
 

@@ -26,6 +26,9 @@ urlpatterns = [
     path("companies", company_views.company_list_create),
     path("companies/<uuid:company_id>/warehouses", company_views.company_warehouses),
 
+    path("suppliers", views.supplier_list_create),
+    path("suppliers/<uuid:pk>", views.supplier_update_delete),
+
     path("audit", views.audit_list),
 
     path("reports/stock", views.stock_report),

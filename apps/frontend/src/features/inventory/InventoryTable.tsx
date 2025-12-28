@@ -22,6 +22,7 @@ export default function InventoryTable({
         <tr>
           <th className="p-2 text-left">Product</th>
           <th className="p-2 text-left">Warehouse</th>
+          <th className="p-2 text-left">Supplier</th>
           <th className="p-2 text-right">Qty</th>
           <th className="p-2">Actions</th>
         </tr>
@@ -34,6 +35,7 @@ export default function InventoryTable({
           >
             <td className="p-2">{r.product_name}</td>
             <td className="p-2">{r.warehouse_name}</td>
+            <td className="p-2">{r.supplier_name || "-"}</td>
             <td className="p-2 text-right">{r.quantity}</td>
             <td className="p-2">
               <InventoryActions

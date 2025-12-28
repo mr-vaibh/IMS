@@ -2,6 +2,12 @@
 
 import { apiFetchClient } from "@/lib/api.client";
 
+const statusStyles: Record<string, string> = {
+  PENDING: "bg-yellow-100 text-yellow-700",
+  APPROVED: "bg-green-100 text-green-700",
+  REJECTED: "bg-red-100 text-red-700",
+};
+
 export default function AdjustmentTable({
   adjustments,
 }: {
@@ -36,9 +42,7 @@ export default function AdjustmentTable({
 
             <td
               className={`p-2 font-medium ${
-                a.delta > 0
-                  ? "text-green-700"
-                  : "text-red-700"
+                a.delta > 0 ? "text-green-700" : "text-red-700"
               }`}
             >
               {a.delta > 0 ? "+" : ""}
@@ -46,7 +50,17 @@ export default function AdjustmentTable({
             </td>
 
             <td className="p-2">{a.reason}</td>
-            <td className="p-2">{a.status}</td>
+
+            {/* Badge-style status */}
+            <td className="p-2">
+              <span
+                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                  statusStyles[a.status] ?? "bg-gray-100 text-gray-700"
+                }`}
+              >
+                {a.status}
+              </span>
+            </td>
 
             <td className="p-2">
               {a.status === "PENDING" && (

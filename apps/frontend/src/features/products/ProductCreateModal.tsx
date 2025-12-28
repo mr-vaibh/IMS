@@ -14,7 +14,7 @@ export default function ProductCreateModal({
   const [name, setName] = useState("");
   const [sku, setSku] = useState("");
   const [price, setPrice] = useState("");
-  const [unit, setUnit] = useState("");
+  const [unit, setUnit] = useState(""); // default to "piece"
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -50,9 +50,26 @@ export default function ProductCreateModal({
         {error && <p className="text-red-600 text-sm">{error}</p>}
 
         <input className="border p-2 w-full" placeholder="Name" value={name} onChange={e => setName(e.target.value)} />
-        <input className="border p-2 w-full" placeholder="SKU (optional)" value={sku} onChange={e => setSku(e.target.value)} />
+        <input className="border p-2 w-full uppercase" placeholder="SKU (optional)" value={sku} onChange={e => setSku(e.target.value)} />
         <input className="border p-2 w-full" placeholder="Price" type="number" value={price} onChange={e => setPrice(e.target.value)} />
-        <input className="border p-2 w-full" placeholder="Unit (pcs, kg)" value={unit} onChange={e => setUnit(e.target.value)} />
+
+        <select
+          className="border p-2 w-full"
+          value={unit}
+          onChange={e => setUnit(e.target.value)}
+        >
+          <option value="" disabled>
+            Select unit
+          </option>
+          <option value="pcs">Piece</option>
+          <option value="kg">Kg</option>
+          <option value="ltr">Litre</option>
+          <option value="gram">Gram</option>
+          <option value="millilitre">Millilitre</option>
+          <option value="others">Others</option>
+        </select>
+
+
         <textarea className="border p-2 w-full" placeholder="Description" value={description} onChange={e => setDescription(e.target.value)} />
 
         <div className="flex justify-end gap-2 pt-2">

@@ -2,6 +2,8 @@ from uuid import uuid4
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.exceptions import ValidationError
+
 
 import django.utils.timezone as timezone
 
@@ -16,6 +18,7 @@ from core.audit.logger import AuditLogger
 from core.audit.enums import AuditAction
 from rbac.services import user_has_permission
 from inventory.models import Product, InventoryStock, InventoryLedger, Warehouse, InventoryAdjustment
+from company.models import Supplier
 from inventory.services import (
     request_adjustment_service,
     approve_adjustment_service,
@@ -99,6 +102,8 @@ def inventory_list(request):
                 "product_name": s.product.name,
                 "warehouse_id": s.warehouse.id,
                 "warehouse_name": s.warehouse.name,
+                "supplier_id": s.product.supplier.id if s.product.supplier else None,
+                "supplier_name": s.product.supplier.name if s.product.supplier else None,
                 "quantity": s.quantity,
             }
             for s in items
@@ -145,6 +150,9 @@ def product_list_create(request):
         company=request.user.userprofile.company,
         name=request.data["name"],
         sku=request.data.get("sku", f"PRD-{uuid4().hex[:8]}"),
+        description=request.data.get("description", ""),
+        price=float(request.data.get("price", 0)),
+        unit=request.data.get("unit", "pcs"),
     )
 
     AuditLogger.log(
@@ -210,13 +218,6 @@ def product_update_delete(request, pk):
 
 
 # ================ Warehouse Views =================
-
-
-from uuid import uuid4
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError
 
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
@@ -304,6 +305,119 @@ def warehouse_delete(request, pk):
         action=AuditAction.DELETE,
         actor_id=request.user.id,
     )
+    return Response({"message": "deleted"})
+
+
+# ================= Supplier Views ======================
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def supplier_list_create(request):
+    profile = request.user.userprofile
+    company = profile.company
+
+    if not company:
+        return Response(
+            {"message": "No active company selected"},
+            status=400
+        )
+
+    # --------------------
+    # GET: list suppliers
+    # --------------------
+    if request.method == "GET":
+        qs = (
+            Supplier.objects
+            .filter(
+                belongs_to=company,
+                deleted_at__isnull=True
+            )
+            .order_by("name")
+        )
+
+        return Response([
+            {
+                "id": s.id,
+                "name": s.name,
+            }
+            for s in qs
+        ])
+
+    # --------------------
+    # POST: create supplier
+    # --------------------
+    if not user_has_permission(request.user, "supplier.manage"):
+        return Response({"message": "Forbidden"}, status=403)
+
+    name = request.data.get("name")
+    if not name:
+        raise ValidationError("Supplier name is required")
+
+    supplier = Supplier.objects.create(
+        name=name,
+        belongs_to=company,   # 🔥 derived, never from client
+    )
+
+    AuditLogger.log(
+        entity="supplier",
+        entity_id=supplier.id,
+        action=AuditAction.CREATE,
+        actor_id=request.user.id,
+        new_data={
+            "name": supplier.name,
+            "company_id": str(company.id),
+        },
+    )
+
+    return Response(
+        {
+            "id": supplier.id,
+            "name": supplier.name,
+        },
+        status=201
+    )
+
+@api_view(["PUT", "DELETE"])
+@permission_classes([IsAuthenticated])
+def supplier_update_delete(request, pk):
+    try:
+        supplier = Supplier.objects.get(id=pk, deleted_at__isnull=True)
+    except Supplier.DoesNotExist:
+        return Response(status=404)
+
+    if not user_has_permission(request.user, "supplier.manage"):
+        return Response({"message": "Forbidden"}, status=403)
+
+    if request.method == "PUT":
+        old = {"name": supplier.name}
+
+        supplier.name = request.data["name"]
+        supplier.save()
+
+        AuditLogger.log(
+            entity="supplier",
+            entity_id=supplier.id,
+            action=AuditAction.UPDATE,
+            actor_id=request.user.id,
+            old_data=old,
+            new_data={
+                "name": supplier.name,
+            },
+        )
+
+        return Response({"message": "updated"})
+
+    # DELETE (soft)
+    supplier.deleted_at = timezone.now()
+    supplier.save()
+
+    AuditLogger.log(
+        entity="supplier",
+        entity_id=supplier.id,
+        action=AuditAction.DELETE,
+        actor_id=request.user.id,
+    )
+
     return Response({"message": "deleted"})
 
 
