@@ -5,6 +5,8 @@ services:
     image: postgres:16
     container_name: ims_db
     restart: always
+    env_file:
+      - .env # Use .env file to load environment variables for the backend service
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
@@ -12,7 +14,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5433:5432"
 
   backend:
     build: ./backend

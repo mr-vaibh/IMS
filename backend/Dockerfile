@@ -18,6 +18,18 @@ RUN pip install --no-cache-dir -r requirements.txt
 # app code
 COPY . .
 
+# entrypoint
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 EXPOSE 8000
 
-CMD ["gunicorn", "backend.wsgi:application", "--bind", "0.0.0.0:8000"]
+ENTRYPOINT ["/entrypoint.sh"]
+
+CMD [\
+    "gunicorn",\
+    "backend.wsgi:application",\
+    "--bind", "0.0.0.0:8000",\
+    "--access-logfile", "-",\
+    "--error-logfile", "-"\
+    ]
