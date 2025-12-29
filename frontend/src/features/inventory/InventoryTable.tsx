@@ -28,24 +28,32 @@ export default function InventoryTable({
         </tr>
       </thead>
       <tbody>
-        {rows.map((r) => (
-          <tr
-            key={`${r.product_id}-${r.warehouse_id}`}
-            className={r.quantity === 0 ? "bg-red-100" : ""}
-          >
-            <td className="p-2">{r.product_name}</td>
-            <td className="p-2">{r.warehouse_name}</td>
-            <td className="p-2">{r.supplier_name || "-"}</td>
-            <td className="p-2 text-right">{r.quantity}</td>
-            <td className="p-2">
-              <InventoryActions
-                productId={r.product_id}
-                warehouseId={r.warehouse_id}
-                warehouses={warehouses}
-              />
+        {rows.length === 0 ? (
+          <tr>
+            <td colSpan={5} className="p-4 text-center text-gray-500">
+              No records found
             </td>
           </tr>
-        ))}
+        ) : (
+          rows.map((r) => (
+            <tr
+              key={`${r.product_id}-${r.warehouse_id}`}
+              className={r.quantity === 0 ? "bg-red-100" : ""}
+            >
+              <td className="p-2">{r.product_name}</td>
+              <td className="p-2">{r.warehouse_name}</td>
+              <td className="p-2">{r.supplier_name || "-"}</td>
+              <td className="p-2 text-right">{r.quantity}</td>
+              <td className="p-2">
+                <InventoryActions
+                  productId={r.product_id}
+                  warehouseId={r.warehouse_id}
+                  warehouses={warehouses}
+                />
+              </td>
+            </tr>
+          ))
+        )}
       </tbody>
     </table>
   );

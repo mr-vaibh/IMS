@@ -14,10 +14,9 @@ export default function AdjustmentTable({
   adjustments: any[];
 }) {
   async function act(id: string, action: "approve" | "reject") {
-    await apiFetchClient(
-      `/inventory/adjustments/${id}/${action}`,
-      { method: "POST" }
-    );
+    await apiFetchClient(`/inventory/adjustments/${id}/${action}`, {
+      method: "POST",
+    });
     window.location.reload();
   }
 
@@ -35,53 +34,60 @@ export default function AdjustmentTable({
       </thead>
 
       <tbody>
-        {adjustments.map((a) => (
-          <tr key={a.id} className="border-t">
-            <td className="p-2">{a.product_name}</td>
-            <td className="p-2">{a.warehouse_name}</td>
-
-            <td
-              className={`p-2 font-medium ${
-                a.delta > 0 ? "text-green-700" : "text-red-700"
-              }`}
-            >
-              {a.delta > 0 ? "+" : ""}
-              {a.delta}
-            </td>
-
-            <td className="p-2">{a.reason}</td>
-
-            {/* Badge-style status */}
-            <td className="p-2">
-              <span
-                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
-                  statusStyles[a.status] ?? "bg-gray-100 text-gray-700"
-                }`}
-              >
-                {a.status}
-              </span>
-            </td>
-
-            <td className="p-2">
-              {a.status === "PENDING" && (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => act(a.id, "approve")}
-                    className="btn-success text-sm"
-                  >
-                    Approve
-                  </button>
-                  <button
-                    onClick={() => act(a.id, "reject")}
-                    className="btn-danger text-sm"
-                  >
-                    Reject
-                  </button>
-                </div>
-              )}
+        {adjustments.length === 0 ? (
+          <tr>
+            <td colSpan={6} className="p-4 text-center text-gray-500">
+              No records found
             </td>
           </tr>
-        ))}
+        ) : (
+          adjustments.map((a) => (
+            <tr key={a.id} className="border-t">
+              <td className="p-2">{a.product_name}</td>
+              <td className="p-2">{a.warehouse_name}</td>
+
+              <td
+                className={`p-2 font-medium ${
+                  a.delta > 0 ? "text-green-700" : "text-red-700"
+                }`}
+              >
+                {a.delta > 0 ? "+" : ""}
+                {a.delta}
+              </td>
+
+              <td className="p-2">{a.reason}</td>
+
+              <td className="p-2">
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                    statusStyles[a.status] ?? "bg-gray-100 text-gray-700"
+                  }`}
+                >
+                  {a.status}
+                </span>
+              </td>
+
+              <td className="p-2">
+                {a.status === "PENDING" && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => act(a.id, "approve")}
+                      className="btn-success text-sm"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => act(a.id, "reject")}
+                      className="btn-danger text-sm"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                )}
+              </td>
+            </tr>
+          ))
+        )}
       </tbody>
     </table>
   );

@@ -20,59 +20,66 @@ export default function AuditTable({ audits }: { audits: AuditLog[] }) {
           </tr>
         </thead>
         <tbody>
-          {audits.map((a) => (
-            <tr key={a.id} className="border-t">
-              <td className="p-2 whitespace-nowrap">
-                {new Date(a.time).toLocaleString()}
-              </td>
-
-              <td className="p-2">
-                {a.entity}{" "}
-                <span className="text-gray-500">
-                  ({a.entity_id})
-                </span>
-              </td>
-
-              <td className="p-2">
-                {(() => {
-                  const actionText = String(a.action || "");
-                  const key = actionText.toLowerCase();
-                  let cls = "badge";
-                  if (key === "create") cls += " badge-create";
-                  else if (key === "update") cls += " badge-update";
-                  else if (key === "delete") cls += " badge-delete";
-
-                  const label = actionText
-                    ? actionText.charAt(0).toUpperCase() + actionText.slice(1).toLowerCase()
-                    : "-";
-
-                  return <span className={cls}>{label}</span>;
-                })()}
-              </td>
-
-              <td className="p-2">
-                {a.actor?.username ?? "System"}
-              </td>
-
-              <td className="p-2">
-                <button
-                  onClick={() => setSelected(a)}
-                  className="btn-ghost text-sm"
-                >
-                  View
-                </button>
+          {audits.length === 0 ? (
+            <tr>
+              <td colSpan={5} className="p-4 text-center text-gray-500">
+                No records found
               </td>
             </tr>
-          ))}
+          ) : (
+            audits.map((a) => (
+              <tr key={a.id} className="border-t">
+                <td className="p-2 whitespace-nowrap">
+                  {new Date(a.time).toLocaleString()}
+                </td>
+
+                <td className="p-2">
+                  {a.entity}{" "}
+                  <span className="text-gray-500">({a.entity_id})</span>
+                </td>
+
+                <td className="p-2">
+                  {(() => {
+                    const actionText = String(a.action || "");
+                    const key = actionText.toLowerCase();
+                    let cls = "badge";
+                    if (key === "create") cls += " badge-create";
+                    else if (key === "update") cls += " badge-update";
+                    else if (key === "delete") cls += " badge-delete";
+
+                    const label = actionText
+                      ? actionText.charAt(0).toUpperCase() +
+                        actionText.slice(1).toLowerCase()
+                      : "-";
+
+                    return <span className={cls}>{label}</span>;
+                  })()}
+                </td>
+
+                <td className="p-2">{a.actor?.username ?? "System"}</td>
+
+                <td className="p-2">
+                  <button
+                    onClick={() => setSelected(a)}
+                    className="btn-ghost text-sm"
+                  >
+                    View
+                  </button>
+                </td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
 
-      <AuditDiffModal
-        open={!!selected}
-        onClose={() => setSelected(null)}
-        oldData={selected?.old_data ?? {}}
-        newData={selected?.new_data ?? {}}
-      />
+      {audits.length > 0 && (
+        <AuditDiffModal
+          open={!!selected}
+          onClose={() => setSelected(null)}
+          oldData={selected?.old_data ?? {}}
+          newData={selected?.new_data ?? {}}
+        />
+      )}
     </>
   );
 }
