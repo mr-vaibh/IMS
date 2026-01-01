@@ -5,11 +5,10 @@ import { apiFetchClient, ApiError } from "@/lib/api.client";
 import { toast } from "sonner";
 
 const ISSUE_TYPES = [
-  { value: "PRODUCTION", label: "Used in Production" },
-  { value: "SALES", label: "Used for Sale" },
-  { value: "MARKETING", label: "Used for Marketing" },
-  { value: "INTERNAL_USE", label: "Internal Use" },
-  { value: "SAMPLE", label: "Sample / Demo" },
+  { value: "PRODUCTION", label: "Production" },
+  { value: "INTERNAL", label: "Internal Use" },
+  { value: "MARKETING", label: "Marketing / Samples" },
+  { value: "LOSS", label: "Loss / Damage" },
   { value: "OTHER", label: "Other" },
 ];
 
@@ -28,7 +27,7 @@ export default function IssueModal({
 
   async function submit() {
     try {
-      await apiFetchClient("/inventory/issue", {
+      await apiFetchClient("/inventory/issues/create", {
         method: "POST",
         body: JSON.stringify({
           product_id: productId,
@@ -39,14 +38,13 @@ export default function IssueModal({
         }),
       });
 
-      toast.success("Stock issued successfully");
+      toast.success("Issue request created");
       onClose();
-      window.location.reload();
     } catch (err) {
       if (err instanceof ApiError) {
         toast.error(err.message);
       } else {
-        toast.error("Failed to issue stock");
+        toast.error("Failed to create issue");
       }
     }
   }
@@ -63,8 +61,8 @@ export default function IssueModal({
           value={issueType}
           onChange={(e) => setIssueType(e.target.value)}
         >
-          <option value="">Select purpose</option>
-          {ISSUE_TYPES.map((t) => (
+          <option value="">Select issue type</option>
+          {ISSUE_TYPES.map(t => (
             <option key={t.value} value={t.value}>
               {t.label}
             </option>
@@ -80,20 +78,20 @@ export default function IssueModal({
 
         <textarea
           className="border p-2 w-full"
-          placeholder="Notes / reference (optional)"
+          placeholder="Notes (optional)"
           onChange={(e) => setNotes(e.target.value)}
         />
 
         <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="border px-3 py-1">
+          <button onClick={onClose} className="btn-ghost">
             Cancel
           </button>
           <button
             onClick={submit}
             disabled={!canSubmit}
-            className="px-3 py-1 bg-black text-white disabled:opacity-50"
+            className="btn-warning disabled:opacity-50"
           >
-            Issue
+            Submit
           </button>
         </div>
       </div>

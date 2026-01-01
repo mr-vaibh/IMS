@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
                 ('requested_by', models.UUIDField()),
                 ('approved_by', models.UUIDField(blank=True, null=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('decided_at', models.DateTimeField(blank=True, null=True)),
+                ('approved_at', models.DateTimeField(blank=True, null=True)),
                 ('product', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='inventory.product')),
                 ('warehouse', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='inventory.warehouse')),
             ],

@@ -15,6 +15,8 @@ class Command(BaseCommand):
             "inventory.view_audit",
             "inventory.view_adjustments",
             "inventory.issue",
+            "inventory.issue_view",
+            "inventory.issue_approve",
             "product.manage",
             "warehouse.manage",
             "supplier.manage",
@@ -37,6 +39,8 @@ class Command(BaseCommand):
                 "inventory.view_audit",
                 "inventory.view_adjustments",
                 "inventory.issue",
+                "inventory.issue_view",
+                "inventory.issue_approve",
             ],
             "Staff": [
                 "inventory.view",
@@ -44,6 +48,7 @@ class Command(BaseCommand):
                 "inventory.stock_out",
                 "inventory.adjust",
                 "inventory.issue",
+                "inventory.issue_view",
             ],
             "Viewer": [
                 "inventory.view",

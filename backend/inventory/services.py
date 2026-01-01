@@ -6,7 +6,7 @@ from django.forms.models import model_to_dict
 from core.audit.enums import AuditAction
 from core.audit.logger import AuditLogger
 from rbac.services import user_has_permission
-from inventory.models import InventoryStock, InventoryLedger, InventoryAdjustment, Product, Warehouse, IssueType
+from inventory.models import InventoryStock, InventoryLedger, InventoryAdjustment, Product, Warehouse, InventoryIssue
 
 from django.contrib.auth import get_user_model
 
@@ -372,7 +372,7 @@ def approve_adjustment_service(
 
     adj.status = InventoryAdjustment.STATUS_APPROVED
     adj.approved_by = actor_id
-    adj.decided_at = now()
+    adj.approved_at = now()
     adj.save()
 
     AuditLogger.log(
@@ -412,7 +412,7 @@ def reject_adjustment_service(
 
     adj.status = InventoryAdjustment.STATUS_REJECTED
     adj.approved_by = actor_id
-    adj.decided_at = now()
+    adj.approved_at = now()
     adj.save()
 
     AuditLogger.log(
@@ -426,61 +426,110 @@ def reject_adjustment_service(
 
 
 @transaction.atomic
-def issue_stock_service(
-    *,
-    actor_id,
-    product_id,
-    warehouse_id,
-    quantity,
-    issue_type,
-    notes=None,
-):
-    if quantity <= 0:
-        raise ValueError("Quantity must be greater than zero")
+def approve_issue(*, issue: InventoryIssue, actor):
+    if issue.status != InventoryIssue.STATUS_PENDING:
+        raise ValueError("Issue already processed")
 
-    if issue_type not in IssueType.values:
-        raise ValueError("Invalid issue type")
+    old_issue = {
+        "status": issue.status,
+        "quantity": issue.quantity,
+        "product_id": str(issue.product_id),
+        "warehouse_id": str(issue.warehouse_id),
+        "issue_type": issue.issue_type,
+        "notes": issue.notes,
+    }
 
-    with transaction.atomic():
-        try:
-            stock = InventoryStock.objects.select_for_update().get(
-                product_id=product_id,
-                warehouse_id=warehouse_id,
-            )
-        except InventoryStock.DoesNotExist:
-            raise ValueError("Stock record not found")
+    stock = InventoryStock.objects.select_for_update().get(
+        product=issue.product,
+        warehouse=issue.warehouse,
+    )
 
-        if stock.quantity < quantity:
-            raise ValueError("Insufficient stock")
+    old_stock = {
+        "quantity": stock.quantity,
+        "version": stock.version,
+    }
 
-        stock.quantity -= quantity
-        stock.version += 1
-        stock.save()
+    if stock.quantity < issue.quantity:
+        raise ValueError("Insufficient stock")
 
-        ledger = InventoryLedger.objects.create(
-            product_id=product_id,
-            warehouse_id=warehouse_id,
-            change=-quantity,
-            balance_after=stock.quantity,
-            reference_type="ISSUE",
-            reference_id=stock.id,
-            reason=f"{issue_type}: {notes or ''}",
-            created_by=actor_id,
-            created_at=now(),
-        )
+    stock.quantity -= issue.quantity
+    stock.version += 1
+    stock.save()
 
-        AuditLogger.log(
-            entity="inventory",
-            entity_id=str(stock.id),
-            action=AuditAction.UPDATE,
-            actor_id=actor_id,
-            new_data={
-                "type": "ISSUE",
-                "issue_type": issue_type,
-                "quantity": quantity,
-                "warehouse_id": str(warehouse_id),
-                "product_id": str(product_id),
-            },
-        )
+    AuditLogger.log(
+        entity="inventory_issue_created",
+        entity_id=stock.id,
+        action=AuditAction.CREATE,
+        actor_id=actor.id,
+        old_data=old_stock,
+        new_data={
+            "quantity": stock.quantity,
+            "version": stock.version,
+        },
+    )
 
-        return stock, ledger
+    InventoryLedger.objects.create(
+        product=issue.product,
+        warehouse=issue.warehouse,
+        change=-issue.quantity,
+        balance_after=stock.quantity,
+        reference_type="ISSUE",
+        reference_id=issue.id,
+        reason=issue.issue_type,
+        created_by=actor.id,
+    )
+
+    issue.status = InventoryIssue.STATUS_APPROVED
+    issue.approved_by = actor
+    issue.approved_at = now()
+    issue.save()
+
+    AuditLogger.log(
+        entity="inventory_issue_approved",
+        entity_id=issue.id,
+        action=AuditAction.UPDATE,
+        actor_id=actor.id,
+        old_data=old_issue,
+        new_data={
+            "status": issue.status,
+            "approved_by": actor.id,
+            "approved_at": issue.approved_at.isoformat(),
+        },
+    )
+
+
+@transaction.atomic
+def reject_issue(*, issue: InventoryIssue, actor, reason=None):
+    if issue.status != InventoryIssue.STATUS_PENDING:
+        raise ValueError("Issue already processed")
+
+    old_issue = {
+        "status": issue.status,
+        "quantity": issue.quantity,
+        "product_id": str(issue.product_id),
+        "warehouse_id": str(issue.warehouse_id),
+        "issue_type": issue.issue_type,
+        "notes": issue.notes,
+    }
+
+    issue.status = InventoryIssue.STATUS_REJECTED
+    issue.rejection_reason = reason or ""
+    issue.rejected_by = actor
+    issue.rejected_at = now()
+    issue.save()
+
+    AuditLogger.log(
+        entity="inventory_issue",
+        entity_id=issue.id,
+        action=AuditAction.UPDATE,
+        actor_id=actor.id,
+        old_data=old_issue,
+        new_data={
+            "status": issue.status,
+            "rejection_reason": issue.rejection_reason,
+            "rejected_by": actor.username,
+            "rejected_at": issue.rejected_at.isoformat(),
+        },
+    )
+
+    return issue

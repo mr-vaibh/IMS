@@ -3,6 +3,7 @@ from inventory.models import (
     InventoryStock,
     InventoryLedger,
     InventoryAdjustment,
+    InventoryIssue,
 )
 
 @admin.register(InventoryStock)
@@ -44,7 +45,7 @@ class InventoryAdjustmentAdmin(admin.ModelAdmin):
         "status",
         "requested_by",
         "approved_by",
-        "decided_at",
+        "approved_at",
     )
 
     list_filter = ("status", "warehouse")
@@ -53,5 +54,39 @@ class InventoryAdjustmentAdmin(admin.ModelAdmin):
     readonly_fields = (
         "requested_by",
         "approved_by",
-        "decided_at",
+        "approved_at",
+    )
+
+@admin.register(InventoryIssue)
+class InventoryIssueAdmin(admin.ModelAdmin):
+    list_display = (
+        "product",
+        "warehouse",
+        "quantity",
+        "issue_type",
+        "status",
+        "requested_by",
+        "created_at",
+    )
+
+    list_filter = ("status", "issue_type", "warehouse")
+    search_fields = ("product__name", "notes")
+    readonly_fields = ("created_at",)
+
+    fieldsets = (
+        ("Issue Info", {
+            "fields": (
+                "product",
+                "warehouse",
+                "quantity",
+                "issue_type",
+                "status",
+            )
+        }),
+        ("Notes", {
+            "fields": ("notes",),
+        }),
+        ("Audit", {
+            "fields": ("requested_by", "approved_by", "created_at"),
+        }),
     )

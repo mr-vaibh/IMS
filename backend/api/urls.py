@@ -11,7 +11,11 @@ urlpatterns = [
     path("inventory/stock-in/bulk", views.bulk_stock_in),
     path("inventory/stock-out", views.stock_out),
     path("inventory/transfer", views.transfer_stock),
-    path("inventory/issue", views.issue_stock),
+
+    path("inventory/issues", views.issue_list),
+    path("inventory/issues/create", views.issue_create),
+    path("inventory/issues/<uuid:pk>/decide", views.issue_decide),
+
 
     path("inventory/adjustments", views.adjustment_list),
     path("inventory/adjustments/request", views.request_adjustment),

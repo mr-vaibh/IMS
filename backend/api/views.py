@@ -17,14 +17,15 @@ from core.audit.models import AuditLog
 from core.audit.logger import AuditLogger
 from core.audit.enums import AuditAction
 from rbac.services import user_has_permission
-from inventory.models import Product, InventoryStock, InventoryLedger, Warehouse, InventoryAdjustment
+from inventory.models import Product, InventoryStock, InventoryLedger, Warehouse, InventoryAdjustment, InventoryIssue
 from company.models import Supplier
 from inventory.services import (
     request_adjustment_service,
     approve_adjustment_service,
     reject_adjustment_service,
     bulk_stock_in_service,
-    issue_stock_service,
+    approve_issue,
+    reject_issue,
 )
 
 
@@ -749,29 +750,98 @@ def reject_adjustment(request, pk):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def issue_stock(request):
+def issue_create(request):
     if not user_has_permission(request.user, "inventory.issue"):
         return Response({"message": "Forbidden"}, status=403)
 
+    profile = request.user.userprofile
+
     try:
-        issue_stock_service(
-            actor_id=request.user.id,
+        issue = InventoryIssue.objects.create(
             product_id=request.data["product_id"],
             warehouse_id=request.data["warehouse_id"],
+            company=profile.company,
             quantity=int(request.data["quantity"]),
             issue_type=request.data["issue_type"],
-            notes=request.data.get("notes"),
+            notes=request.data.get("notes", ""),
+            requested_by=request.user,
         )
-    except KeyError:
+    except KeyError as e:
         return Response(
-            {"message": "Missing required fields"},
-            status=400,
+            {"message": f"Missing field: {str(e)}"},
+            status=400
         )
-    except ValueError as e:
+    except ValueError:
         return Response(
-            {"message": str(e)},
-            status=400,
+            {"message": "Invalid quantity"},
+            status=400
         )
+
+    AuditLogger.log(
+        entity="inventory_issue_requested",
+        entity_id=issue.id,
+        action=AuditAction.CREATE,
+        actor_id=request.user.id,
+        new_data={
+            "status": issue.status,
+            "product_id": str(issue.product_id),
+            "warehouse_id": str(issue.warehouse_id),
+            "company_id": str(profile.company_id),
+            "quantity": issue.quantity,
+            "issue_type": issue.issue_type,
+            "notes": issue.notes,
+            "requested_by": request.user.username,
+        },
+    )
+
+    return Response({"id": issue.id}, status=201)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def issue_list(request):
+    if not user_has_permission(request.user, "inventory.issue_view"):
+        return Response({"message": "Forbidden"}, status=403)
+
+    qs = (
+        InventoryIssue.objects
+        .select_related("product", "warehouse", "requested_by")
+        .filter(company=request.user.userprofile.company)
+        .order_by("-created_at")
+    )
+
+    return Response([
+        {
+            "id": i.id,
+            "product": i.product.name,
+            "warehouse": i.warehouse.name,
+            "quantity": i.quantity,
+            "type": i.issue_type,
+            "type_label": i.get_issue_type_display(),
+            "status": i.status,
+            "notes": i.notes,
+            "requested_by": i.requested_by.username,
+            "created_at": i.created_at,
+        }
+        for i in qs
+    ])
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def issue_decide(request, pk):
+    if not user_has_permission(request.user, "inventory.issue_approve"):
+        return Response({"message": "Forbidden"}, status=403)
+
+    issue = InventoryIssue.objects.get(id=pk)
+
+    action = request.data["action"]
+
+    if action == "APPROVE":
+        approve_issue(issue=issue, actor=request.user)
+    elif action == "REJECT":
+        reject_issue(issue=issue, actor=request.user)
+    else:
+        return Response({"message": "Invalid action"}, status=400)
 
     return Response({"success": True})
 

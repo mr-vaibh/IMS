@@ -66,6 +66,10 @@ export default function Navbar() {
           {hasPermission(perms, "inventory.view_adjustments") && (
             <Link href="/adjustments" className="navbar-link">Adjustments</Link>
           )}
+
+          {hasPermission(perms, "inventory.issue_view") && (
+            <Link href="/issues">Issues</Link>
+          )}
         </div>
 
         <div className="ml-auto flex items-center gap-3">
