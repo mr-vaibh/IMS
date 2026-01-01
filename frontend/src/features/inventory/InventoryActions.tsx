@@ -27,32 +27,32 @@ export default function InventoryActions({
     <>
       <div className="flex justify-center gap-2">
         <button
-          onClick={() => setModal("IN")}
-          className="btn-primary text-sm"
+          onClick={() => setModal("ISSUE")}
+          className="btn-ghost text-sm"
         >
-          + Stock In
+          📦 Issue
         </button>
-
-        <button
-          onClick={() => setModal("OUT")}
-          className="btn-danger text-sm"
-        >
-          − Stock Out
-        </button>
-
         <button
           onClick={() => setModal("TRANSFER")}
           className="btn-ghost text-sm"
         >
           ⇄ Transfer
         </button>
+        <button
+          onClick={() => setModal("IN")}
+          className="btn-primary text-sm"
+        >
+          + In
+        </button>
 
         <button
-          onClick={() => setModal("ISSUE")}
-          className="btn-success text-sm"
+          onClick={() => setModal("OUT")}
+          className="btn-danger text-sm"
         >
-          📦 Issue
+          − Out
         </button>
+
+
 
       </div>
 

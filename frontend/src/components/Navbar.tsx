@@ -35,36 +35,62 @@ export default function Navbar() {
   if (pathname === "/login") return null;
 
   return (
-    <nav className="navbar mb-6">
+    <nav className="navbar mb-6 sticky top-0 z-50 bg-white/90 backdrop-blur-md shadow-sm">
       <div className="max-w-7xl mx-auto flex items-center gap-4">
         <div className="flex items-center gap-3">
           <div className="rounded-md bg-white/60 p-2 shadow-sm">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-[var(--primary)]">
-              <rect width="24" height="24" rx="6" fill="currentColor" style={{opacity:0.08}} />
-              <path d="M6 12h12" stroke="#2563eb" strokeWidth="1.5" strokeLinecap="round"/>
+            <svg
+              width="28"
+              height="28"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="text-[var(--primary)]"
+            >
+              <rect
+                width="24"
+                height="24"
+                rx="6"
+                fill="currentColor"
+                style={{ opacity: 0.08 }}
+              />
+              <path
+                d="M6 12h12"
+                stroke="#2563eb"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
             </svg>
           </div>
           <div className="w-64">
             <span className="text-lg font-semibold text-slate-900">
               {user ? `${user.company_name}` : "No Company Selected"}
             </span>
-            <div className="text-sm muted">{user?.email ?? ''}</div>
+            <div className="text-sm muted">{user?.email ?? ""}</div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <Link href="/inventory" className="navbar-link">Inventory</Link>
+          <Link href="/inventory" className="navbar-link">
+            Inventory
+          </Link>
 
           {hasPermission(perms, "inventory.view") && (
-            <Link href="/reports" className="navbar-link">Reports</Link>
+            <Link href="/reports" className="navbar-link">
+              Reports
+            </Link>
           )}
 
           {hasPermission(perms, "inventory.view_audit") && (
-            <Link href="/audit" className="navbar-link">Audit</Link>
+            <Link href="/audit" className="navbar-link">
+              Audit
+            </Link>
           )}
 
           {hasPermission(perms, "inventory.view_adjustments") && (
-            <Link href="/adjustments" className="navbar-link">Adjustments</Link>
+            <Link href="/adjustments" className="navbar-link">
+              Adjustments
+            </Link>
           )}
 
           {hasPermission(perms, "inventory.issue_view") && (
@@ -80,7 +106,9 @@ export default function Navbar() {
             </div>
           )}
 
-          <button onClick={logout} className="btn-ghost">Logout</button>
+          <button onClick={logout} className="btn-ghost">
+            Logout
+          </button>
         </div>
       </div>
     </nav>

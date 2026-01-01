@@ -12,15 +12,13 @@ const ISSUE_TYPES = [
   { value: "OTHER", label: "Other" },
 ];
 
-export default function IssueModal({
-  productId,
-  warehouseId,
-  onClose,
-}: {
+interface Props {
   productId: string;
   warehouseId: string;
   onClose: () => void;
-}) {
+}
+
+export default function IssueModal({ productId, warehouseId, onClose }: Props) {
   const [quantity, setQuantity] = useState(0);
   const [issueType, setIssueType] = useState("");
   const [notes, setNotes] = useState("");
@@ -52,47 +50,64 @@ export default function IssueModal({
   const canSubmit = quantity > 0 && issueType;
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-      <div className="bg-white p-4 rounded w-96 space-y-3">
-        <h2 className="font-semibold">Issue Stock</h2>
+    <div className="fixed inset-0 z-40 modal-backdrop flex items-center justify-center px-4">
+      <div className="modal-panel bg-white w-full max-w-md">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-600)] text-white">
+          <h2 className="font-semibold">Issue Stock</h2>
+          <button onClick={onClose} className="text-white opacity-90 hover:opacity-100">✕</button>
+        </div>
 
-        <select
-          className="border p-2 w-full"
-          value={issueType}
-          onChange={(e) => setIssueType(e.target.value)}
-        >
-          <option value="">Select issue type</option>
-          {ISSUE_TYPES.map(t => (
-            <option key={t.value} value={t.value}>
-              {t.label}
-            </option>
-          ))}
-        </select>
+        {/* Body */}
+        <div className="p-4 space-y-3">
+          <div>
+            <label className="block text-sm text-muted mb-1">Issue Type</label>
+            <select
+              className="border p-2 w-full"
+              value={issueType}
+              onChange={(e) => setIssueType(e.target.value)}
+            >
+              <option value="">Select issue type</option>
+              {ISSUE_TYPES.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <input
-          type="number"
-          className="border p-2 w-full"
-          placeholder="Quantity"
-          onChange={(e) => setQuantity(+e.target.value)}
-        />
+          <div>
+            <label className="block text-sm text-muted mb-1">Quantity</label>
+            <input
+              type="number"
+              className="border p-2 w-full"
+              placeholder="Quantity"
+              onChange={(e) => setQuantity(+e.target.value)}
+            />
+          </div>
 
-        <textarea
-          className="border p-2 w-full"
-          placeholder="Notes (optional)"
-          onChange={(e) => setNotes(e.target.value)}
-        />
+          <div>
+            <label className="block text-sm text-muted mb-1">Notes (optional)</label>
+            <textarea
+              className="border p-2 w-full"
+              placeholder="Notes"
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </div>
 
-        <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="btn-ghost">
-            Cancel
-          </button>
-          <button
-            onClick={submit}
-            disabled={!canSubmit}
-            className="btn-warning disabled:opacity-50"
-          >
-            Submit
-          </button>
+          {/* Actions */}
+          <div className="flex justify-end gap-2 pt-1">
+            <button onClick={onClose} className="btn-ghost">
+              Cancel
+            </button>
+            <button
+              onClick={submit}
+              disabled={!canSubmit}
+              className={`btn-warning ${!canSubmit ? 'opacity-60 cursor-not-allowed' : ''}`}
+            >
+              Submit
+            </button>
+          </div>
         </div>
       </div>
     </div>
