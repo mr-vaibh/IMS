@@ -29,14 +29,14 @@ export default function InventoryActions({
           onClick={() => setModal("IN")}
           className="btn-primary text-sm"
         >
-          +
+          + Stock In
         </button>
 
         <button
           onClick={() => setModal("OUT")}
           className="btn-danger text-sm"
         >
-          −
+          − Stock Out
         </button>
 
         <button

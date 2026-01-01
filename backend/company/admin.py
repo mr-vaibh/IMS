@@ -19,5 +19,11 @@ class WarehouseAdmin(admin.ModelAdmin):
 
 @admin.register(Company)
 class CompanyAdmin(admin.ModelAdmin):
-    list_display = ("name",)
+    list_display = ("name", "created_by")
     search_fields = ("name",)
+    exclude = ("created_by",)
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)

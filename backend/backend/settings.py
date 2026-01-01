@@ -186,3 +186,6 @@ LOGGING = {
         "level": "INFO",
     },
 }
+
+LICENSE_KEY=os.getenv("LICENSE_KEY")
+LICENSE_SERVER_URL=os.getenv("LICENSE_SERVER_URL")

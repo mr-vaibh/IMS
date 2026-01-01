@@ -16,14 +16,25 @@ services:
     ports:
       - "5433:5432"
 
+  license-server:
+    build: ./license-server
+    container_name: ims-license-server
+    restart: unless-stopped
+    ports:
+      - "5050:5000"
+    volumes:
+      - license-server_license_data:/app/data
+
   backend:
     build: ./backend
     container_name: ims_backend
+    hostname: ims-backend-prod
     restart: always
     env_file:
       - .env  # Use .env file to load environment variables for the backend service
     depends_on:
       - db
+      - license-server
     volumes:
       - ./backend/staticfiles:/app/staticfiles
     ports:
@@ -40,3 +51,4 @@ services:
 
 volumes:
   pgdata:
+  license-server_license_data:
