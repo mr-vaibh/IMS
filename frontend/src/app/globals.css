@@ -97,7 +97,7 @@ body {
 
 /* Button variants */
 .btn-success {
-  background: linear-gradient(90deg,#16a34a,#15803d);
+  background: linear-gradient(90deg,#1cc85b,#1fb054);
   color: white;
   padding: 0.45rem 0.8rem;
   border-radius: 10px;

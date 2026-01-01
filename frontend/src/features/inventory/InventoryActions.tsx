@@ -49,7 +49,7 @@ export default function InventoryActions({
 
         <button
           onClick={() => setModal("ISSUE")}
-          className="btn-ghost text-sm"
+          className="btn-success text-sm"
         >
           📦 Issue
         </button>
