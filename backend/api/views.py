@@ -24,6 +24,7 @@ from inventory.services import (
     approve_adjustment_service,
     reject_adjustment_service,
     bulk_stock_in_service,
+    issue_stock_service,
 )
 
 
@@ -744,6 +745,35 @@ def reject_adjustment(request, pk):
     return Response({"status": "REJECTED"})
 
 
+# ================ Issue Views ==========================
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def issue_stock(request):
+    if not user_has_permission(request.user, "inventory.issue"):
+        return Response({"message": "Forbidden"}, status=403)
+
+    try:
+        issue_stock_service(
+            actor_id=request.user.id,
+            product_id=request.data["product_id"],
+            warehouse_id=request.data["warehouse_id"],
+            quantity=int(request.data["quantity"]),
+            issue_type=request.data["issue_type"],
+            notes=request.data.get("notes"),
+        )
+    except KeyError:
+        return Response(
+            {"message": "Missing required fields"},
+            status=400,
+        )
+    except ValueError as e:
+        return Response(
+            {"message": str(e)},
+            status=400,
+        )
+
+    return Response({"success": True})
 
 
 # ================ Authentication Views =================

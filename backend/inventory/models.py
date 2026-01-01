@@ -2,6 +2,16 @@ import uuid
 from django.db import models
 from company.models import Product, Warehouse
 
+
+class IssueType(models.TextChoices):
+    PRODUCTION = "PRODUCTION", "Production"
+    SALES = "SALES", "Sales"
+    MARKETING = "MARKETING", "Marketing"
+    INTERNAL_USE = "INTERNAL_USE", "Internal Use"
+    SAMPLE = "SAMPLE", "Sample"
+    OTHER = "OTHER", "Other"
+
+
 class InventoryStock(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 

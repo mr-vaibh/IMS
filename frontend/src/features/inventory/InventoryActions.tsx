@@ -3,13 +3,14 @@
 import { useState } from "react";
 import StockModal from "./StockModal";
 import TransferModal from "./TransferModal";
+import IssueModal from "./IssueModal";
 
 interface Warehouse {
   id: string;
   name: string;
 }
 
-type ActionType = "IN" | "OUT" | "TRANSFER" | null;
+type ActionType = "IN" | "OUT" | "TRANSFER" | "ISSUE" | null;
 
 export default function InventoryActions({
   productId,
@@ -45,6 +46,14 @@ export default function InventoryActions({
         >
           ⇄ Transfer
         </button>
+
+        <button
+          onClick={() => setModal("ISSUE")}
+          className="btn-ghost text-sm"
+        >
+          📦 Issue
+        </button>
+
       </div>
 
       {modal === "IN" && (
@@ -69,6 +78,14 @@ export default function InventoryActions({
         <TransferModal
           productId={productId}
           fromWarehouseId={warehouseId}
+          onClose={() => setModal(null)}
+        />
+      )}
+
+      {modal === "ISSUE" && (
+        <IssueModal
+          productId={productId}
+          warehouseId={warehouseId}
           onClose={() => setModal(null)}
         />
       )}

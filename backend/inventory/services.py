@@ -6,9 +6,11 @@ from django.forms.models import model_to_dict
 from core.audit.enums import AuditAction
 from core.audit.logger import AuditLogger
 from rbac.services import user_has_permission
-from inventory.models import InventoryStock, InventoryLedger, InventoryAdjustment, Product, Warehouse
+from inventory.models import InventoryStock, InventoryLedger, InventoryAdjustment, Product, Warehouse, IssueType
 
 from django.contrib.auth import get_user_model
+
+
 
 User = get_user_model()
 
@@ -421,3 +423,64 @@ def reject_adjustment_service(
         old_data={"status": "PENDING"},
         new_data={"status": "REJECTED"},
     )
+
+
+@transaction.atomic
+def issue_stock_service(
+    *,
+    actor_id,
+    product_id,
+    warehouse_id,
+    quantity,
+    issue_type,
+    notes=None,
+):
+    if quantity <= 0:
+        raise ValueError("Quantity must be greater than zero")
+
+    if issue_type not in IssueType.values:
+        raise ValueError("Invalid issue type")
+
+    with transaction.atomic():
+        try:
+            stock = InventoryStock.objects.select_for_update().get(
+                product_id=product_id,
+                warehouse_id=warehouse_id,
+            )
+        except InventoryStock.DoesNotExist:
+            raise ValueError("Stock record not found")
+
+        if stock.quantity < quantity:
+            raise ValueError("Insufficient stock")
+
+        stock.quantity -= quantity
+        stock.version += 1
+        stock.save()
+
+        ledger = InventoryLedger.objects.create(
+            product_id=product_id,
+            warehouse_id=warehouse_id,
+            change=-quantity,
+            balance_after=stock.quantity,
+            reference_type="ISSUE",
+            reference_id=stock.id,
+            reason=f"{issue_type}: {notes or ''}",
+            created_by=actor_id,
+            created_at=now(),
+        )
+
+        AuditLogger.log(
+            entity="inventory",
+            entity_id=str(stock.id),
+            action=AuditAction.UPDATE,
+            actor_id=actor_id,
+            new_data={
+                "type": "ISSUE",
+                "issue_type": issue_type,
+                "quantity": quantity,
+                "warehouse_id": str(warehouse_id),
+                "product_id": str(product_id),
+            },
+        )
+
+        return stock, ledger

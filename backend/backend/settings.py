@@ -188,4 +188,8 @@ LOGGING = {
 }
 
 LICENSE_KEY=os.getenv("LICENSE_KEY")
-LICENSE_SERVER_URL=os.getenv("LICENSE_SERVER_URL")
+
+if os.environ.get("RUNNING_IN_DOCKER") == "1":
+    LICENSE_SERVER_URL = "http://license-server:5000"
+else:
+    LICENSE_SERVER_URL = "http://localhost:5050"
