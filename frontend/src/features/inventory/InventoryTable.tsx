@@ -23,7 +23,10 @@ interface InventoryTableProps {
   warehouses: Warehouse[];
 }
 
-export default function InventoryTable({ rows, warehouses }: InventoryTableProps) {
+export default function InventoryTable({
+  rows,
+  warehouses,
+}: InventoryTableProps) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [columnFilters, setColumnFilters] = useState<any[]>([]);
   const [sorting, setSorting] = useState([]);
@@ -34,7 +37,7 @@ export default function InventoryTable({ rows, warehouses }: InventoryTableProps
 
   // Build unique suppliers list for filter dropdown
   const suppliers = useMemo(() => {
-    const set = new Set(rows.map(r => r.supplier_name).filter(Boolean));
+    const set = new Set(rows.map((r) => r.supplier_name).filter(Boolean));
     return Array.from(set);
   }, [rows]);
 
@@ -112,6 +115,39 @@ export default function InventoryTable({ rows, warehouses }: InventoryTableProps
     pageCount: Math.ceil(rows.length / pagination.pageSize),
   });
 
+  // Add this function inside InventoryTable component
+  const exportCSV = () => {
+    const rowsToExport = table.getFilteredRowModel().rows; // filtered + sorted data
+    if (!rowsToExport.length) return;
+
+    // Extract column headers (excluding actions)
+    const headers = columns
+      .filter((col) => col.id !== "actions")
+      .map((col) => col.header as string);
+
+    // Extract rows
+    const csvRows = rowsToExport.map((row) =>
+      columns
+        .filter((col) => col.id !== "actions")
+        .map((col) => {
+          const value = row.getValue(col.accessorKey as string);
+          return `"${value ?? ""}"`; // wrap in quotes to handle commas
+        })
+        .join(",")
+    );
+
+    const csvContent = [headers.join(","), ...csvRows].join("\n");
+
+    // Create a blob and download
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "inventory.csv");
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="w-full max-w-full p-2">
       {/* Title and Global Search */}
@@ -123,6 +159,12 @@ export default function InventoryTable({ rows, warehouses }: InventoryTableProps
           onChange={(e) => setGlobalFilter(e.target.value)}
           className="w-full sm:w-48 px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
         />
+        <button
+          onClick={exportCSV}
+          className="px-3 py-1 bg-blue-500 text-white rounded-lg text-xs hover:bg-blue-600 transition"
+        >
+          Export CSV
+        </button>
       </div>
 
       {/* Table Container */}
@@ -141,7 +183,10 @@ export default function InventoryTable({ rows, warehouses }: InventoryTableProps
                       className="flex items-center gap-1 cursor-pointer select-none"
                       onClick={header.column.getToggleSortingHandler()}
                     >
-                      {flexRender(header.column.columnDef.header, header.getContext())}
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
                       {{
                         asc: " 🔼",
                         desc: " 🔽",
@@ -149,79 +194,122 @@ export default function InventoryTable({ rows, warehouses }: InventoryTableProps
                     </div>
 
                     {/* Column Filter */}
-                    {header.column.getCanFilter() && header.column.id !== "actions" && (
-                      <div className="mt-1">
-                        {header.column.id === "quantity" ? (
-                          <div className="flex gap-1">
+                    {header.column.getCanFilter() &&
+                      header.column.id !== "actions" && (
+                        <div className="mt-1">
+                          {header.column.id === "quantity" ? (
+                            <div className="flex gap-1">
+                              <select
+                                value={
+                                  columnFilters.find((f) => f.id === "quantity")
+                                    ?.value?.[0] || ""
+                                }
+                                onChange={(e) => {
+                                  const val = e.target.value as
+                                    | "gt"
+                                    | "lt"
+                                    | "eq"
+                                    | "";
+                                  const num =
+                                    columnFilters.find(
+                                      (f) => f.id === "quantity"
+                                    )?.value?.[1] || 0;
+                                  setColumnFilters((old) =>
+                                    [
+                                      ...old.filter((f) => f.id !== "quantity"),
+                                      val
+                                        ? {
+                                            id: "quantity",
+                                            value: [val, Number(num)],
+                                          }
+                                        : null,
+                                    ].filter(Boolean)
+                                  );
+                                }}
+                                className="border p-0.5 rounded w-16 text-xs"
+                              >
+                                <option value="">Op</option>
+                                <option value="gt">&gt;</option>
+                                <option value="lt">&lt;</option>
+                                <option value="eq">=</option>
+                              </select>
+                              <input
+                                type="number"
+                                value={
+                                  columnFilters.find((f) => f.id === "quantity")
+                                    ?.value?.[1] ?? ""
+                                }
+                                onChange={(e) => {
+                                  const num = Number(e.target.value);
+                                  const operator =
+                                    columnFilters.find(
+                                      (f) => f.id === "quantity"
+                                    )?.value?.[0] || "";
+                                  setColumnFilters((old) =>
+                                    [
+                                      ...old.filter((f) => f.id !== "quantity"),
+                                      operator
+                                        ? {
+                                            id: "quantity",
+                                            value: [operator, num],
+                                          }
+                                        : null,
+                                    ].filter(Boolean)
+                                  );
+                                }}
+                                className="border p-0.5 rounded w-16 text-xs"
+                                placeholder="Qty"
+                              />
+                            </div>
+                          ) : header.column.id === "warehouse_name" ? (
                             <select
-                              value={columnFilters.find(f => f.id === "quantity")?.value?.[0] || ""}
-                              onChange={(e) => {
-                                const val = e.target.value as "gt" | "lt" | "eq" | "";
-                                const num = columnFilters.find(f => f.id === "quantity")?.value?.[1] || 0;
-                                setColumnFilters((old) => [
-                                  ...old.filter(f => f.id !== "quantity"),
-                                  val ? { id: "quantity", value: [val, Number(num)] } : null,
-                                ].filter(Boolean));
-                              }}
-                              className="border p-0.5 rounded w-16 text-xs"
+                              value={
+                                (header.column.getFilterValue() as string) ?? ""
+                              }
+                              onChange={(e) =>
+                                header.column.setFilterValue(e.target.value)
+                              }
+                              className="border p-0.5 rounded w-full text-xs mt-1"
                             >
-                              <option value="">Op</option>
-                              <option value="gt">&gt;</option>
-                              <option value="lt">&lt;</option>
-                              <option value="eq">=</option>
+                              <option value="">All</option>
+                              {warehouses.map((w) => (
+                                <option key={w.id} value={w.name}>
+                                  {w.name}
+                                </option>
+                              ))}
                             </select>
+                          ) : header.column.id === "supplier_name" ? (
+                            <select
+                              value={
+                                (header.column.getFilterValue() as string) ?? ""
+                              }
+                              onChange={(e) =>
+                                header.column.setFilterValue(e.target.value)
+                              }
+                              className="border p-0.5 rounded w-full text-xs mt-1"
+                            >
+                              <option value="">All</option>
+                              {suppliers.map((s) => (
+                                <option key={s} value={s}>
+                                  {s}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
                             <input
-                              type="number"
-                              value={columnFilters.find(f => f.id === "quantity")?.value?.[1] ?? ""}
-                              onChange={(e) => {
-                                const num = Number(e.target.value);
-                                const operator = columnFilters.find(f => f.id === "quantity")?.value?.[0] || "";
-                                setColumnFilters((old) => [
-                                  ...old.filter(f => f.id !== "quantity"),
-                                  operator ? { id: "quantity", value: [operator, num] } : null,
-                                ].filter(Boolean));
-                              }}
-                              className="border p-0.5 rounded w-16 text-xs"
-                              placeholder="Qty"
+                              type="text"
+                              value={
+                                (header.column.getFilterValue() as string) ?? ""
+                              }
+                              onChange={(e) =>
+                                header.column.setFilterValue(e.target.value)
+                              }
+                              className="border p-0.5 rounded w-full text-xs mt-1"
+                              placeholder={`Filter`}
                             />
-                          </div>
-                        ) : header.column.id === "warehouse_name" ? (
-                          <select
-                            value={header.column.getFilterValue() as string ?? ""}
-                            onChange={(e) => header.column.setFilterValue(e.target.value)}
-                            className="border p-0.5 rounded w-full text-xs mt-1"
-                          >
-                            <option value="">All</option>
-                            {warehouses.map((w) => (
-                              <option key={w.id} value={w.name}>
-                                {w.name}
-                              </option>
-                            ))}
-                          </select>
-                        ) : header.column.id === "supplier_name" ? (
-                          <select
-                            value={header.column.getFilterValue() as string ?? ""}
-                            onChange={(e) => header.column.setFilterValue(e.target.value)}
-                            className="border p-0.5 rounded w-full text-xs mt-1"
-                          >
-                            <option value="">All</option>
-                            {suppliers.map((s) => (
-                              <option key={s} value={s}>
-                                {s}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <input
-                            type="text"
-                            value={header.column.getFilterValue() as string ?? ""}
-                            onChange={(e) => header.column.setFilterValue(e.target.value)}
-                            className="border p-0.5 rounded w-full text-xs mt-1"
-                            placeholder={`Filter`}
-                          />
-                        )}
-                      </div>
-                    )}
+                          )}
+                        </div>
+                      )}
                   </th>
                 ))}
               </tr>
@@ -231,7 +319,10 @@ export default function InventoryTable({ rows, warehouses }: InventoryTableProps
           <tbody>
             {table.getRowModel().rows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="p-3 text-center text-gray-500 text-xs">
+                <td
+                  colSpan={columns.length}
+                  className="p-3 text-center text-gray-500 text-xs"
+                >
                   No records found
                 </td>
               </tr>
@@ -246,11 +337,12 @@ export default function InventoryTable({ rows, warehouses }: InventoryTableProps
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
-                      className={`px-2 py-1 align-middle whitespace-nowrap ${
-                        "text-left"
-                      }`}
+                      className={`px-2 py-1 align-middle whitespace-nowrap ${"text-left"}`}
                     >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </td>
                   ))}
                 </tr>
@@ -298,8 +390,8 @@ export default function InventoryTable({ rows, warehouses }: InventoryTableProps
         </div>
 
         <div>
-          Page <span className="font-medium">{pagination.pageIndex + 1}</span> of{" "}
-          <span className="font-medium">{table.getPageCount()}</span>
+          Page <span className="font-medium">{pagination.pageIndex + 1}</span>{" "}
+          of <span className="font-medium">{table.getPageCount()}</span>
         </div>
       </div>
     </div>
