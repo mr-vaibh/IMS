@@ -23,7 +23,6 @@ export default function AuditReport({
       filename="audit_report.csv"
       rows={rows}
       pdfEndpoint={`/api/reports/audit/pdf?${query}`}
-      csvEndpoint={`/api/reports/audit/csv?${query}`}
     >
       <table className="table w-full text-sm table-fixed">
         <thead className="bg-gray-50">
