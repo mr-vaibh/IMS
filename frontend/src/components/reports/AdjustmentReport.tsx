@@ -2,13 +2,26 @@
 
 import ReportLayout from "./ReportLayout";
 
-export default function AdjustmentReport({ rows }: { rows: any[] }) {
+export default function AdjustmentReport({
+  rows,
+  startDate,
+  endDate,
+}: {
+  rows: any[];
+  startDate?: string;
+  endDate?: string;
+}) {
+  const params = new URLSearchParams();
+  if (startDate) params.append("start_date", startDate);
+  if (endDate) params.append("end_date", endDate);
+
+  const query = params.toString();
   return (
     <ReportLayout
       title="Inventory Adjustments"
       filename="adjustment_report.csv"
       rows={rows}
-      pdfEndpoint="/api/reports/adjustments/pdf"
+      pdfEndpoint={`/api/reports/adjustments/pdf?${query}`}
     >
       <table className="table w-full text-sm">
         <thead className="bg-gray-50">

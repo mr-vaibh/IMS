@@ -42,6 +42,11 @@
       text-align: right;
     }
 
+    .delta-col {
+      width: 40px;       /* adjust as needed */
+      white-space: nowrap;
+    }
+
     .mono {
       font-family: monospace;
       font-size: 10px;
@@ -72,7 +77,7 @@
       <th>Date</th>
       <th>Product</th>
       <th>Warehouse</th>
-      <th class="right">Delta</th>
+      <th class="right delta-col">Delta</th>
       <th>Status</th>
       <th>Reason</th>
       <th>Requested By</th>
@@ -86,7 +91,7 @@
       <td>{{ r.created_at|date:"Y-m-d H:i" }}</td>
       <td>{{ r.product__name }}</td>
       <td>{{ r.warehouse__name }}</td>
-      <td class="right">{{ r.delta }}</td>
+      <td class="right delta-col">{{ r.delta }}</td>
       <td class="status">{{ r.status }}</td>
       <td>{{ r.reason }}</td>
       <td>{{ r.requested_by__username|default:"—" }}</td>
