@@ -1,5 +1,5 @@
 # backend/reports/services.py
-from inventory.models import InventoryStock, InventoryLedger
+from inventory.models import InventoryStock, InventoryLedger, InventoryAdjustment
 from django.utils.dateparse import parse_date
 
 from django.db.models import F, DecimalField, ExpressionWrapper
@@ -90,5 +90,37 @@ def get_audit_report(filters: dict):
             "reference_type",
             "reference_id",
             "created_by__username",
+        )
+    )
+
+
+def get_adjustment_report(filters: dict):
+    qs = InventoryAdjustment.objects.select_related(
+        "product",
+        "warehouse",
+    ).order_by("-created_at")
+
+    if filters.get("start_date"):
+        qs = qs.filter(created_at__date__gte=filters["start_date"])
+
+    if filters.get("end_date"):
+        qs = qs.filter(created_at__date__lte=filters["end_date"])
+
+    if filters.get("status"):
+        qs = qs.filter(status=filters["status"])
+
+    qs = qs[:2000]
+
+    return list(
+        qs.values(
+            "created_at",
+            "product__name",
+            "warehouse__name",
+            "delta",
+            "status",
+            "reason",
+            "requested_by__username",
+            "approved_by__username",
+            "approved_at",
         )
     )

@@ -7,7 +7,7 @@ from weasyprint import HTML
 from rbac.services import user_has_permission
 from django.utils.dateparse import parse_date
 
-from .services import get_stock_report_data, get_inventory_valuation, get_low_stock_report, get_audit_report
+from .services import get_stock_report_data, get_inventory_valuation, get_low_stock_report, get_audit_report, get_adjustment_report
 from .utils import get_signature_block
 
 from inventory.models import InventoryLedger
@@ -179,3 +179,37 @@ def audit_report_pdf(request):
 
     pdf = HTML(string=html).write_pdf()
     return HttpResponse(pdf, content_type="application/pdf")
+
+
+@login_required
+def adjustment_report_pdf(request):
+    filters = {
+        "start_date": request.GET.get("start_date"),
+        "end_date": request.GET.get("end_date"),
+        "product_id": request.GET.get("product_id"),
+        "warehouse_id": request.GET.get("warehouse_id"),
+        "status": request.GET.get("status"),
+    }
+
+    rows = get_adjustment_report(filters)
+
+    profile = request.user.userprofile
+
+    context = {
+        "company": profile.company.name if profile.company else "—",
+        "generated_at": timezone.now(),
+        "rows": rows,
+        "signature": get_signature_block(profile),
+        "filters": filters,
+    }
+
+    html = render_to_string(
+        "reports/adjustment_report.html",
+        context,
+    )
+
+    pdf = HTML(string=html).write_pdf()
+
+    response = HttpResponse(pdf, content_type="application/pdf")
+    response["Content-Disposition"] = "inline; filename=adjustment_report.pdf"
+    return response

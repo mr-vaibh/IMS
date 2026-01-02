@@ -7,8 +7,15 @@ import MovementReport from "@/components/reports/MovementReport";
 import ValuationReport from "@/components/reports/ValuationReport";
 import LowStockReport from "@/components/reports/LowStockReport";
 import AuditReport from "@/components/reports/AuditReport";
+import AdjustmentReport from "@/components/reports/AdjustmentReport";
 
-type ReportType = "stock" | "movement" | "valuation" | "low-stock" | "audit";
+type ReportType =
+  | "stock"
+  | "movement"
+  | "valuation"
+  | "low-stock"
+  | "audit"
+  | "adjustment";
 
 export default function ReportsClient() {
   const [activeReport, setActiveReport] = useState<ReportType>("stock");
@@ -18,6 +25,7 @@ export default function ReportsClient() {
   const [valuation, setValuation] = useState<any[]>([]);
   const [lowStock, setLowStock] = useState<any[]>([]);
   const [audit, setAudit] = useState<any[]>([]);
+  const [adjustments, setAdjustments] = useState<any[]>([]);
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -59,6 +67,10 @@ export default function ReportsClient() {
         .then(res => setAudit(res.items ?? res));
     }
 
+    if (activeReport === "adjustment") {
+      apiFetchClient(`/reports/adjustments?${params.toString()}`)
+        .then(res => setAdjustments(res.items ?? res));
+    }
 
 
   }, [activeReport, startDate, endDate]);
@@ -82,6 +94,7 @@ export default function ReportsClient() {
             <option value="valuation">Inventory Valuation</option>
             <option value="low-stock">Low Stock / Reorder</option>
             <option value="audit">Audit Report</option>
+            <option value="adjustment">Adjustments Report</option>
           </select>
         </div>
 
@@ -130,6 +143,8 @@ export default function ReportsClient() {
 
       {activeReport === "audit" && <AuditReport rows={audit} startDate={startDate} endDate={endDate} />}
 
+      {activeReport === "adjustment" && <AdjustmentReport rows={adjustments} startDate={startDate} endDate={endDate} />
+    }
 
 
     </div>

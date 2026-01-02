@@ -28,10 +28,6 @@ from inventory.services import (
     reject_issue,
 )
 
-import inspect
-from inventory.services import stock_in_service
-print(inspect.signature(stock_in_service))
-
 
 # Generic error response
 
@@ -492,7 +488,7 @@ def audit_list(request):
 # ================ Reports Views =================
 
 
-from reports.services import get_inventory_valuation, get_low_stock_report, get_audit_report
+from reports.services import get_inventory_valuation, get_low_stock_report, get_audit_report, get_adjustment_report
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -603,6 +599,17 @@ def audit_report(request):
     data = get_audit_report(filters)
     return Response(data)
 
+
+@api_view(["GET"])
+def adjustment_report(request):
+    filters = {
+        "start_date": request.GET.get("start_date"),
+        "end_date": request.GET.get("end_date"),
+        "status": request.GET.get("status"),
+    }
+
+    data = get_adjustment_report(filters)
+    return Response({"items": data})
 
 
 # ================ Stock View =================

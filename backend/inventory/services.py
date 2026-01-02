@@ -366,9 +366,13 @@ def approve_adjustment_service(
     product = adj.product
     warehouse = adj.warehouse
 
-    stock = InventoryStock.objects.select_for_update().get(
+    stock, created = InventoryStock.objects.select_for_update().get_or_create(
         product=product,
         warehouse=warehouse,
+        defaults={
+            "quantity": 0,
+            "version": 1,
+        },
     )
 
     if adj.delta < 0 and stock.quantity < abs(adj.delta):

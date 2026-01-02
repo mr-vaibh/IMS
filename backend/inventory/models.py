@@ -11,7 +11,7 @@ class InventoryStock(models.Model):
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT)
 
-    quantity = models.IntegerField()
+    quantity = models.IntegerField(default=0)
     version = models.IntegerField(default=1)
 
     class Meta:
