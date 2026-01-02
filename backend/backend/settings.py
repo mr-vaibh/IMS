@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'django.contrib.humanize',
+
     'rest_framework',
     'core.apps.CoreConfig',
     'users',
@@ -50,6 +52,7 @@ INSTALLED_APPS = [
     'api',
     'company.apps.CompanyConfig',
     'inventory.apps.InventoryConfig',
+    'reports',
 ]
 
 REST_FRAMEWORK = {
@@ -146,7 +149,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 USE_TZ = True
-TIME_ZONE = "UTC"
+TIME_ZONE = "Asia/Kolkata"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 

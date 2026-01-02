@@ -2,6 +2,7 @@ export interface StockReportRow {
   product_name: string;
   warehouse_name: string;
   quantity: number;
+  created_at: string;
 }
 
 export interface MovementReportRow {

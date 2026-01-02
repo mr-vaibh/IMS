@@ -1,0 +1,138 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      font-family: Georgia, serif;
+      font-size: 12px;
+    }
+    h1 {
+      font-size: 22px;
+      margin-bottom: 12px;
+    }
+    .meta {
+      margin-bottom: 16px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th {
+      border-bottom: 2px solid #000;
+      padding: 6px;
+      text-align: left;
+    }
+    td {
+      border-bottom: 1px solid #ddd;
+      padding: 6px;
+    }
+    .num {
+      text-align: right;
+    }
+    .danger {
+      color: #b91c1c;
+      font-weight: bold;
+    }
+    .success {
+        color: #029421;
+        font-weight: bold;
+    }
+    .signature-wrapper {
+        margin-top: 40px;
+        width: 100%;
+        display: table;
+    }
+
+    .signature-left,
+    .signature-right {
+        display: table-cell;
+        vertical-align: top;
+    }
+
+    .signature-left {
+        width: 60%;
+        padding-right: 20px;
+    }
+
+    .signature-right {
+        width: 40%;
+    }
+
+    .physical-sign-box {
+        border: 1px solid #000;
+        height: 70px;
+        padding: 8px;
+        margin-top: 8px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Low Stock / Reorder Report</h1>
+
+  <div class="meta">
+    <div><strong>Company:</strong> {{ company }}</div>
+    <div><strong>Generated:</strong> {{ generated_at|date:"Y-m-d H:i" }}</div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Product</th>
+        <th>Warehouse</th>
+        <th class="num">Current Qty</th>
+        <th class="num">Reorder Threshold</th>
+        <th class="num">Shortfall</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td>{{ r.product_name }}</td>
+        <td>{{ r.warehouse_name }}</td>
+        <td class="num success">{{ r.quantity }}</td>
+        <td class="num">{{ r.reorder_level }}</td>
+        <td class="num danger">
+          {{ r.shortfall }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if signature %}
+    <hr style="margin-top:40px;"/>
+
+    <div class="signature-wrapper">
+
+    <!-- LEFT: Digital Signature -->
+    <div class="signature-left">
+        <strong>Digitally Validated Report</strong><br/><br/>
+
+        {{ signature.statement }}<br/><br/>
+
+        <strong>Signed by:</strong> {{ signature.signed_by }}<br/>
+        <strong>Role:</strong> {{ signature.role }}<br/>
+        <strong>Date:</strong> {{ signature.signed_at|date:"Y-m-d H:i" }}
+    </div>
+
+    <!-- RIGHT: Physical Signature -->
+    <div class="signature-right">
+        <strong>Physical Signature</strong>
+
+        <div class="physical-sign-box">
+        <small style="color:#555;">Sign here</small>
+        </div>
+
+        <div style="margin-top:6px;">
+        <small style="color:#555;">Name &amp; Date</small>
+        </div>
+    </div>
+
+    </div>
+    {% endif %}
+
+
+</body>
+</html>

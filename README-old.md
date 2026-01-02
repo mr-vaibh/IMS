@@ -32,3 +32,13 @@ DB_PASSWORD=root321
 DB_HOST=db
 DB_PORT=5432
 ```
+
+
+
+# PDF
+pdfEndpoint="/api/reports/stock/pdf"
+
+brew install cairo pango gdk-pixbuf glib libffi
+export PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig"
+export DYLD_LIBRARY_PATH="/opt/homebrew/lib:$DYLD_LIBRARY_PATH"
+source ~/.zshrc

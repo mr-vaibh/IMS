@@ -4,8 +4,8 @@ from core.audit.models import AuditLog
 
 @admin.register(AuditLog)
 class AuditLogAdmin(admin.ModelAdmin):
-    list_display = ("entity", "entity_id", "action", "actor_id", "created_at")
-    search_fields = ("entity", "entity_id", "actor_id")
+    list_display = ("entity", "entity_id", "action", "actor", "created_at")
+    search_fields = ("entity", "entity_id", "actor")
     list_filter = ("entity", "action")
     readonly_fields = [f.name for f in AuditLog._meta.fields]
 

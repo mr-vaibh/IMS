@@ -38,4 +38,7 @@ urlpatterns = [
 
     path("reports/stock", views.stock_report),
     path("reports/movement", views.movement_report),
+    path("reports/valuation", views.inventory_valuation_report),
+    path("reports/low-stock", views.low_stock_report),
+    path("reports/audit", views.audit_report),
 ]

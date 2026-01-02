@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Inventory Audit Report</title>
+
+  <style>
+    body {
+      font-family: "Times New Roman", Georgia, serif;
+      font-size: 14px;
+      color: #000;
+      margin: 0px;
+    }
+
+    h1 {
+      font-size: 32px;
+      margin-bottom: 24px;
+    }
+
+    .meta {
+      margin-bottom: 24px;
+      line-height: 1.6;
+      font-size: 16px;
+    }
+
+    .meta strong {
+      font-weight: bold;
+    }
+
+    table {
+  width: 100%;
+  table-layout: fixed; /* 🔑 CRITICAL */
+  border-collapse: collapse;
+}
+
+thead th {
+  text-align: left;
+  font-weight: bold;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #000;
+}
+
+tbody td {
+  padding: 8px 6px;
+  vertical-align: top;
+  word-wrap: break-word;      /* legacy */
+  overflow-wrap: break-word; /* modern */
+}
+
+.col-date      { width: 13%; }
+.col-product   { width: 12%; }
+.col-warehouse { width: 12%; }
+.col-action    { width: 14%; }
+.col-change    { width: 8%;  text-align: right; }
+.col-balance   { width: 8%;  text-align: right; }
+.col-ref       { width: 23%; }
+.col-user      { width: 10%; }
+
+.mono {
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  word-break: break-all; /* 🔑 UUID WRAP */
+}
+
+
+    .num {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .mono {
+      font-family: "Courier New", monospace;
+      font-size: 12px;
+    }
+
+    hr {
+      margin: 32px 0 16px;
+      border: none;
+      border-top: 2px solid #000;
+    }
+
+    .signature {
+      margin-top: 12px;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .signature strong {
+      font-weight: bold;
+    }
+    .text-center {
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>Inventory Audit Report</h1>
+
+  <div class="meta">
+    <strong>Company:</strong> {{ company }}<br/>
+    <strong>Generated:</strong> {{ generated_at|date:"Y-m-d H:i" }}
+  </div>
+
+  <table>
+  <thead>
+    <tr>
+      <th class="col-date">Date<br>Time</th>
+      <th class="col-product">Product</th>
+      <th class="col-warehouse">Warehouse</th>
+      <th class="col-action">Action</th>
+      <th class="col-change">Change</th>
+      <th class="col-balance">Balance</th>
+      <th class="col-ref text-center">Reference</th>
+      <th class="col-user">User</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td class="col-date">{{ r.created_at|date:"Y-m-d H:i" }}</td>
+      <td class="col-product">{{ r.product__name }}</td>
+      <td class="col-warehouse">{{ r.warehouse__name }}</td>
+      <td class="col-action">{{ r.reference_type }}</td>
+      <td class="col-change">{{ r.change }}</td>
+      <td class="col-balance">{{ r.balance_after }}</td>
+      <td class="col-ref mono">{{ r.reference_id }}</td>
+      <td class="col-user">{{ r.created_by|default:"System" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+
+  {% if signature %}
+    <hr/>
+
+    <div class="signature">
+      <strong>Digitally Validated Report</strong><br/>
+      {{ signature.statement }}<br/><br/>
+
+      <strong>Signed by:</strong> {{ signature.signed_by }}<br/>
+      <strong>Role:</strong> {{ signature.role }}<br/>
+      <strong>Date:</strong> {{ signature.signed_at|date:"Y-m-d H:i" }}
+    </div>
+  {% endif %}
+
+</body>
+</html>

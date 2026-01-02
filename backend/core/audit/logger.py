@@ -36,16 +36,15 @@ class AuditLogger:
         entity,
         entity_id,
         action,
-        actor_id,
+        actor,
         old_data=None,
         new_data=None,
     ):
-        actor_user = User.objects.get(id=actor_id)
         AuditLog.objects.create(
             entity=entity,
             entity_id=str(entity_id),
             action=action,
-            actor=actor_user,
+            actor=actor,
             old_data=make_json_safe(old_data),
             new_data=make_json_safe(new_data),
         )

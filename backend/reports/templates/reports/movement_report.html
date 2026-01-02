@@ -1,0 +1,56 @@
+{% load report_filters %}
+
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: sans-serif; font-size: 11px; }
+    h1 { margin-bottom: 6px; }
+    .meta { margin-bottom: 12px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #ddd; padding: 5px; }
+    th { background: #f4f4f4; }
+    .in { color: green; font-weight: 600; }
+    .out { color: red; font-weight: 600; }
+  </style>
+</head>
+
+<body>
+  <h1>Stock Movement Report</h1>
+
+  <div class="meta">
+    <div><strong>Company:</strong> {{ company }}</div>
+    <div><strong>Generated:</strong> {{ generated_at|date:"Y-m-d H:i:s" }}</div>
+    <div><strong>Signed By:</strong> {{ signed_by }} ({{ role }})</div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Product</th>
+        <th>Warehouse</th>
+        <th>Change</th>
+        <th>Balance</th>
+        <th>Type</th>
+        <!-- <th>Ref</th> -->
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td>{{ r.created_at|date:"Y-m-d H:i" }}</td>
+        <td>{{ r.product.name }}</td>
+        <td>{{ r.warehouse.name }}</td>
+        <td class="{% if r.change > 0 %}in{% else %}out{% endif %}">
+          {% if r.change > 0 %}+{% endif %}{{ r.change }}
+        </td>
+        <td>{{ r.balance_after }}</td>
+        <td>{{ r.reference_type }}</td>
+        <!-- <td>{{ r|ref_display }}</td> -->
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

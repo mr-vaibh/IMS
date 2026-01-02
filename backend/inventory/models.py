@@ -2,6 +2,7 @@ import uuid
 from django.db import models
 from company.models import Product, Warehouse, Company
 from django.contrib.auth.models import User
+from django.conf import settings
 
 
 class InventoryStock(models.Model):
@@ -17,7 +18,7 @@ class InventoryStock(models.Model):
         unique_together = ("product", "warehouse")
 
 class InventoryLedger(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
 
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT)
@@ -30,7 +31,12 @@ class InventoryLedger(models.Model):
 
     reason = models.TextField(null=True, blank=True)
 
-    created_by = models.UUIDField()
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="inventory_ledgers",
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
 
 class InventoryAdjustment(models.Model):
@@ -56,8 +62,12 @@ class InventoryAdjustment(models.Model):
         max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING
     )
 
-    requested_by = models.UUIDField()
-    approved_by = models.UUIDField(null=True, blank=True)
+    requested_by = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name="requested_adjustments"
+    )
+    approved_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.PROTECT, related_name="approved_adjustments"
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     approved_at = models.DateTimeField(null=True, blank=True)

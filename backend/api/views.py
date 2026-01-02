@@ -28,6 +28,10 @@ from inventory.services import (
     reject_issue,
 )
 
+import inspect
+from inventory.services import stock_in_service
+print(inspect.signature(stock_in_service))
+
 
 # Generic error response
 
@@ -36,6 +40,13 @@ def error(code, message, status=400):
         {"code": code, "message": message},
         status=status
     )
+
+
+# Helper functions
+
+def get_actor(request):
+    return request.user
+
 
 # =======================
 
@@ -151,6 +162,7 @@ def product_list_create(request):
         sku=request.data.get("sku", f"PRD-{uuid4().hex[:8]}"),
         description=request.data.get("description", ""),
         price=float(request.data.get("price", 0)),
+        cost_price=float(request.data.get("price", 0)),
         unit=request.data.get("unit", "pcs"),
     )
 
@@ -158,7 +170,7 @@ def product_list_create(request):
         entity="product",
         entity_id=p.id,
         action=AuditAction.CREATE,
-        actor_id=request.user.id,
+        actor=get_actor(request),
         new_data={
             "name": p.name,
             "sku": p.sku,
@@ -191,7 +203,7 @@ def product_update_delete(request, pk):
             entity="product",
             entity_id=p.id,
             action=AuditAction.UPDATE,
-            actor_id=request.user.id,
+            actor=get_actor(request),
             old_data=old,
             new_data={
                 "name": p.name,
@@ -210,7 +222,7 @@ def product_update_delete(request, pk):
         entity="product",
         entity_id=p.id,
         action=AuditAction.DELETE,
-        actor_id=request.user.id,
+        actor=get_actor(request),
     )
 
     return Response({"message": "deleted"})
@@ -272,7 +284,7 @@ def warehouse_list_create(request):
         entity="warehouse",
         entity_id=w.id,
         action=AuditAction.CREATE,
-        actor_id=request.user.id,
+        actor=get_actor(request),
         new_data={
             "name": w.name,
             "code": w.code,
@@ -302,7 +314,7 @@ def warehouse_delete(request, pk):
         entity="warehouse",
         entity_id=pk,
         action=AuditAction.DELETE,
-        actor_id=request.user.id,
+        actor=get_actor(request),
     )
     return Response({"message": "deleted"})
 
@@ -361,7 +373,7 @@ def supplier_list_create(request):
         entity="supplier",
         entity_id=supplier.id,
         action=AuditAction.CREATE,
-        actor_id=request.user.id,
+        actor=get_actor(request),
         new_data={
             "name": supplier.name,
             "company_id": str(company.id),
@@ -397,7 +409,7 @@ def supplier_update_delete(request, pk):
             entity="supplier",
             entity_id=supplier.id,
             action=AuditAction.UPDATE,
-            actor_id=request.user.id,
+            actor=get_actor(request),
             old_data=old,
             new_data={
                 "name": supplier.name,
@@ -414,7 +426,7 @@ def supplier_update_delete(request, pk):
         entity="supplier",
         entity_id=supplier.id,
         action=AuditAction.DELETE,
-        actor_id=request.user.id,
+        actor=get_actor(request),
     )
 
     return Response({"message": "deleted"})
@@ -431,7 +443,7 @@ def transfer_stock(request):
         return Response({"message": "Forbidden"}, status=403)
 
     transfer_stock_service(
-        actor_id=request.user.id,
+        actor=get_actor(request),
         product_id=request.data["product_id"],
         from_warehouse_id=request.data["from_warehouse_id"],
         to_warehouse_id=request.data["to_warehouse_id"],
@@ -479,6 +491,9 @@ def audit_list(request):
 
 # ================ Reports Views =================
 
+
+from reports.services import get_inventory_valuation, get_low_stock_report, get_audit_report
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def stock_report(request):
@@ -505,7 +520,6 @@ def stock_report(request):
         }
         for s in qs
     ])
-
 
 
 @api_view(["GET"])
@@ -549,6 +563,48 @@ def movement_report(request):
         for r in qs
     ])
 
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def inventory_valuation_report(request):
+    if not user_has_permission(request.user, "inventory.view"):
+        return Response({"message": "Forbidden"}, status=403)
+
+    data = list(get_inventory_valuation())
+    return Response(data)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def low_stock_report(request):
+    if not user_has_permission(request.user, "inventory.view"):
+        return Response({"message": "Forbidden"}, status=403)
+
+    threshold = int(request.GET.get("threshold", 10))
+
+    data = list(get_low_stock_report(threshold))
+    return Response(data)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def audit_report(request):
+    if not user_has_permission(request.user, "inventory.view"):
+        return Response({"message": "Forbidden"}, status=403)
+
+    filters = {
+        "start_date": request.GET.get("start_date"),
+        "end_date": request.GET.get("end_date"),
+        "product_id": request.GET.get("product_id"),
+        "warehouse_id": request.GET.get("warehouse_id"),
+        "action": request.GET.get("action"),
+    }
+
+    data = get_audit_report(filters)
+    return Response(data)
+
+
+
 # ================ Stock View =================
 
 from inventory.services import stock_in_service, stock_out_service
@@ -560,7 +616,7 @@ def stock_in(request):
         return Response({"message": "Forbidden"}, status=403)
 
     stock, ledger = stock_in_service(
-        actor_id=request.user.id,
+        actor=get_actor(request),
         product_id=request.data["product_id"],
         warehouse_id=request.data["warehouse_id"],
         quantity=int(request.data["quantity"]),
@@ -585,7 +641,7 @@ def stock_out(request):
 
     try:
         stock_out_service(
-            actor_id=request.user.id,
+            actor=get_actor(request),
             product_id=product_id,
             warehouse_id=warehouse_id,
             quantity=quantity,
@@ -628,7 +684,7 @@ def bulk_stock_in(request):
 
     try:
         result = bulk_stock_in_service(
-            actor_id=request.user.id,
+            actor=get_actor(request),
             company=company,
             warehouse_id=warehouse_id,
             items=items,
@@ -707,7 +763,7 @@ def request_adjustment(request):
             warehouse_id=request.data["warehouse_id"],
             delta=int(request.data["delta"]),
             reason=request.data["reason"],
-            actor_id=request.user.id,
+            actor=get_actor(request),
         )
     except Exception as e:
         return Response({"message": str(e)}, status=400)
@@ -724,7 +780,7 @@ def approve_adjustment(request, pk):
     try:
         approve_adjustment_service(
             adjustment_id=pk,
-            actor_id=request.user.id,
+            actor=get_actor(request),
         )
     except Exception as e:
         return Response({"message": str(e)}, status=400)
@@ -738,7 +794,7 @@ def reject_adjustment(request, pk):
     try:
         reject_adjustment_service(
             adjustment_id=pk,
-            actor_id=request.user.id,
+            actor=get_actor(request),
         )
     except Exception as e:
         return Response({"message": str(e)}, status=400)
@@ -781,7 +837,7 @@ def issue_create(request):
         entity="inventory_issue_requested",
         entity_id=issue.id,
         action=AuditAction.CREATE,
-        actor_id=request.user.id,
+        actor=get_actor(request),
         new_data={
             "status": issue.status,
             "product_id": str(issue.product_id),
@@ -837,9 +893,9 @@ def issue_decide(request, pk):
     action = request.data["action"]
 
     if action == "APPROVE":
-        approve_issue(issue=issue, actor=request.user)
+        approve_issue(issue=issue, actor=get_actor(request))
     elif action == "REJECT":
-        reject_issue(issue=issue, actor=request.user)
+        reject_issue(issue=issue, actor=get_actor(request))
     else:
         return Response({"message": "Invalid action"}, status=400)
 

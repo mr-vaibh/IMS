@@ -1,3 +1,4 @@
+import uuid
 from uuid import uuid4
 from django.db import transaction
 from django.utils.timezone import now
@@ -7,6 +8,7 @@ from core.audit.enums import AuditAction
 from core.audit.logger import AuditLogger
 from rbac.services import user_has_permission
 from inventory.models import InventoryStock, InventoryLedger, InventoryAdjustment, Product, Warehouse, InventoryIssue
+from users.models import UserProfile
 
 from django.contrib.auth import get_user_model
 
@@ -28,7 +30,7 @@ def _get_or_create_stock(product, warehouse):
 @transaction.atomic
 def stock_in_service(
     *,
-    actor_id,
+    actor,
     product_id,
     warehouse_id,
     quantity,
@@ -36,6 +38,9 @@ def stock_in_service(
     reference_type="STOCK_IN",
     reference_id=None,
 ):
+    if not isinstance(actor, User):
+        raise ValueError("actor must be a User instance")
+
     if quantity <= 0:
         raise ValueError("Quantity must be positive")
     
@@ -61,14 +66,14 @@ def stock_in_service(
         reference_type=reference_type,
         reference_id=reference_id,
         reason=reason,
-        created_by=actor_id,
+        created_by=actor,
     )
 
     AuditLogger.log(
         entity="inventory_stock",
         entity_id=stock.id,
         action=AuditAction.UPDATE,
-        actor_id=actor_id,
+        actor=actor,
         old_data=old_stock,
         new_data=model_to_dict(stock),
     )
@@ -80,7 +85,7 @@ def stock_in_service(
 @transaction.atomic
 def stock_out_service(
     *,
-    actor_id,
+    actor,
     product_id,
     warehouse_id,
     quantity,
@@ -88,6 +93,9 @@ def stock_out_service(
     reference_id=None,
     reason=None,
 ):
+    if not isinstance(actor, User):
+        raise ValueError("actor must be a User instance")
+
     if quantity <= 0:
         raise ValueError("Quantity must be positive")
 
@@ -119,14 +127,14 @@ def stock_out_service(
         reference_type=reference_type,
         reference_id=reference_id,
         reason=reason,
-        created_by=actor_id,
+        created_by=actor,
     )
 
     AuditLogger.log(
         entity="inventory_stock",
         entity_id=stock.id,
         action=AuditAction.UPDATE,
-        actor_id=actor_id,
+        actor=actor,
         old_data=old_stock,
         new_data=model_to_dict(stock),
     )
@@ -136,12 +144,15 @@ def stock_out_service(
 @transaction.atomic
 def bulk_stock_in_service(
     *,
-    actor_id,
+    actor,
     company,
     warehouse_id,
     items,
     reference="BULK_STOCK_IN",
 ):
+    if not isinstance(actor, User):
+        raise ValueError("actor must be a User instance")
+
     if not items:
         raise ValueError("No items provided")
 
@@ -192,14 +203,14 @@ def bulk_stock_in_service(
             balance_after=stock.quantity,
             reference_type=reference,
             reference_id=reference_id,
-            created_by=actor_id,
+            created_by=actor,
         )
 
         AuditLogger.log(
             entity="inventory_stock",
             entity_id=stock.id,
             action=AuditAction.UPDATE,
-            actor_id=actor_id,
+            actor=actor,
             old_data=old_stock,
             new_data=model_to_dict(stock),
         )
@@ -214,13 +225,16 @@ def bulk_stock_in_service(
 @transaction.atomic
 def transfer_stock_service(
     *,
-    actor_id,
+    actor,
     product_id,
     from_warehouse_id,
     to_warehouse_id,
     quantity,
     reason=None,
 ):
+    if not isinstance(actor, User):
+        raise ValueError("actor must be a User instance")
+
     if quantity <= 0:
         raise ValueError("Quantity must be positive")
 
@@ -254,7 +268,7 @@ def transfer_stock_service(
         reference_type="TRANSFER_OUT",
         reference_id=to_stock.id,
         reason=reason,
-        created_by=actor_id,
+        created_by=actor,
     )
 
     # IN
@@ -270,14 +284,14 @@ def transfer_stock_service(
         reference_type="TRANSFER_IN",
         reference_id=from_stock.id,
         reason=reason,
-        created_by=actor_id,
+        created_by=actor,
     )
 
     AuditLogger.log(
         entity="inventory_transfer",
         entity_id=to_stock.id,
         action=AuditAction.UPDATE,
-        actor_id=actor_id,
+        actor=actor,
         old_data={"from_qty": from_stock.quantity + quantity},
         new_data={"to_qty": to_stock.quantity},
     )
@@ -292,9 +306,12 @@ def request_adjustment_service(
     warehouse_id,
     delta,
     reason,
-    actor_id,
+    actor,
 ):
-    user = User.objects.get(id=actor_id)
+    if not isinstance(actor, User):
+        raise ValueError("actor must be a User instance")
+
+    user = User.objects.get(id=actor.id)
     if not user_has_permission(user, "inventory.adjust"):
         raise PermissionError("Not allowed")
 
@@ -307,14 +324,14 @@ def request_adjustment_service(
         warehouse_id=warehouse_id,
         delta=delta,
         reason=reason,
-        requested_by=actor_id,
+        requested_by=actor,
     )
 
     AuditLogger.log(
         entity="inventory_adjustment",
         entity_id=adjustment.id,
         action=AuditAction.CREATE,
-        actor_id=actor_id,
+        actor=actor,
         new_data={
             "product_id": str(product_id),
             "warehouse_id": str(warehouse_id),
@@ -331,9 +348,13 @@ def request_adjustment_service(
 def approve_adjustment_service(
     *,
     adjustment_id,
-    actor_id,
+    actor,
 ):
-    user = User.objects.get(id=actor_id)
+    if not isinstance(actor, User):
+        raise ValueError("actor must be a User instance")
+
+    user = User.objects.get(id=actor.id)
+
     if not user_has_permission(user, "inventory.approve_adjustment"):
         raise PermissionError("Not allowed")
 
@@ -367,11 +388,11 @@ def approve_adjustment_service(
         reference_type="ADJUSTMENT",
         reference_id=adj.id,
         reason=adj.reason,
-        created_by=actor_id,
+        created_by=actor,
     )
 
     adj.status = InventoryAdjustment.STATUS_APPROVED
-    adj.approved_by = actor_id
+    adj.approved_by = actor
     adj.approved_at = now()
     adj.save()
 
@@ -379,7 +400,7 @@ def approve_adjustment_service(
         entity="inventory_stock",
         entity_id=stock.id,
         action=AuditAction.UPDATE,
-        actor_id=actor_id,
+        actor=actor,
         old_data=old_stock,
         new_data=model_to_dict(stock),
     )
@@ -388,7 +409,7 @@ def approve_adjustment_service(
         entity="inventory_adjustment",
         entity_id=adj.id,
         action=AuditAction.UPDATE,
-        actor_id=actor_id,
+        actor=actor,
         old_data={"status": "PENDING"},
         new_data={"status": "APPROVED"},
     )
@@ -399,9 +420,12 @@ def approve_adjustment_service(
 def reject_adjustment_service(
     *,
     adjustment_id,
-    actor_id,
+    actor,
 ):
-    user = User.objects.get(id=actor_id)
+    if not isinstance(actor, User):
+        raise ValueError("actor must be a User instance")
+
+    user = User.objects.get(id=actor.id)
     if not user_has_permission(user, "inventory.approve_adjustment"):
         raise PermissionError("Not allowed")
 
@@ -411,7 +435,7 @@ def reject_adjustment_service(
         raise ValueError("Already decided")
 
     adj.status = InventoryAdjustment.STATUS_REJECTED
-    adj.approved_by = actor_id
+    adj.approved_by = actor
     adj.approved_at = now()
     adj.save()
 
@@ -419,7 +443,7 @@ def reject_adjustment_service(
         entity="inventory_adjustment",
         entity_id=adj.id,
         action=AuditAction.UPDATE,
-        actor_id=actor_id,
+        actor=actor,
         old_data={"status": "PENDING"},
         new_data={"status": "REJECTED"},
     )
@@ -427,9 +451,12 @@ def reject_adjustment_service(
 
 @transaction.atomic
 def approve_issue(*, issue: InventoryIssue, actor):
+    if not isinstance(actor, User):
+        raise ValueError("actor must be a User instance")
+
     if issue.status != InventoryIssue.STATUS_PENDING:
         raise ValueError("Issue already processed")
-
+    
     old_issue = {
         "status": issue.status,
         "quantity": issue.quantity,
@@ -460,7 +487,7 @@ def approve_issue(*, issue: InventoryIssue, actor):
         entity="inventory_issue_created",
         entity_id=stock.id,
         action=AuditAction.CREATE,
-        actor_id=actor.id,
+        actor=actor,
         old_data=old_stock,
         new_data={
             "quantity": stock.quantity,
@@ -476,7 +503,7 @@ def approve_issue(*, issue: InventoryIssue, actor):
         reference_type="ISSUE",
         reference_id=issue.id,
         reason=issue.issue_type,
-        created_by=actor.id,
+        created_by=actor,
     )
 
     issue.status = InventoryIssue.STATUS_APPROVED
@@ -488,11 +515,11 @@ def approve_issue(*, issue: InventoryIssue, actor):
         entity="inventory_issue_approved",
         entity_id=issue.id,
         action=AuditAction.UPDATE,
-        actor_id=actor.id,
+        actor=actor,
         old_data=old_issue,
         new_data={
             "status": issue.status,
-            "approved_by": actor.id,
+            "approved_by": actor.username,
             "approved_at": issue.approved_at.isoformat(),
         },
     )
@@ -500,9 +527,12 @@ def approve_issue(*, issue: InventoryIssue, actor):
 
 @transaction.atomic
 def reject_issue(*, issue: InventoryIssue, actor, reason=None):
+    if not isinstance(actor, User):
+        raise ValueError("actor must be a User instance")
+    
     if issue.status != InventoryIssue.STATUS_PENDING:
         raise ValueError("Issue already processed")
-
+    
     old_issue = {
         "status": issue.status,
         "quantity": issue.quantity,
@@ -522,7 +552,7 @@ def reject_issue(*, issue: InventoryIssue, actor, reason=None):
         entity="inventory_issue",
         entity_id=issue.id,
         action=AuditAction.UPDATE,
-        actor_id=actor.id,
+        actor=actor,
         old_data=old_issue,
         new_data={
             "status": issue.status,
