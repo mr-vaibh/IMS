@@ -32,6 +32,12 @@ def get_db():
     finally:
         db.close()
 
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
 @app.post("/validate")
 def validate(req: ValidateRequest, db: Session = Depends(get_db)):
     lic = db.query(License).filter(

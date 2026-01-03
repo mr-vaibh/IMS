@@ -5,7 +5,7 @@ services:
     build: .
     container_name: ims-license-server
     ports:
-      - "5050:5050"
+      - "5050:5000"
     volumes:
       - license-server_license_data:/app/data
     restart: unless-stopped
