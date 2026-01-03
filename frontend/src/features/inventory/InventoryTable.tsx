@@ -11,6 +11,8 @@ import {
   getSortedRowModel,
   ColumnDef,
   flexRender,
+  SortingState,
+  ColumnFiltersState,
 } from "@tanstack/react-table";
 
 interface Warehouse {
@@ -29,7 +31,7 @@ export default function InventoryTable({
 }: InventoryTableProps) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [columnFilters, setColumnFilters] = useState<any[]>([]);
-  const [sorting, setSorting] = useState([]);
+  const [sorting, setSorting] = useState<SortingState>([]);
   const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: 10,
@@ -117,29 +119,33 @@ export default function InventoryTable({
 
   // Add this function inside InventoryTable component
   const exportCSV = () => {
-    const rowsToExport = table.getFilteredRowModel().rows; // filtered + sorted data
+    const rowsToExport = table.getFilteredRowModel().rows;
     if (!rowsToExport.length) return;
 
-    // Extract column headers (excluding actions)
-    const headers = columns
-      .filter((col) => col.id !== "actions")
-      .map((col) => col.header as string);
+    const exportableColumns = columns.filter(
+      (col) => col.id !== "actions"
+    );
 
-    // Extract rows
+    const headers = exportableColumns.map(
+      (col) => col.header as string
+    );
+
     const csvRows = rowsToExport.map((row) =>
-      columns
-        .filter((col) => col.id !== "actions")
+      exportableColumns
         .map((col) => {
-          const value = row.getValue(col.accessorKey as string);
-          return `"${value ?? ""}"`; // wrap in quotes to handle commas
+          const columnId =
+            col.id ?? (col as any).accessorKey; // fallback safety
+          const value = row.getValue(columnId as string);
+          return `"${value ?? ""}"`;
         })
         .join(",")
     );
 
     const csvContent = [headers.join(","), ...csvRows].join("\n");
 
-    // Create a blob and download
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;

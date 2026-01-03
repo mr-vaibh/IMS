@@ -1,8 +1,17 @@
 "use client";
 
+type ValuationRow = {
+  product_name: string;
+  warehouse_name: string;
+  quantity: number;
+  unit_cost: number;
+  total_value: number;
+};
+
+
 import ReportLayout from "./ReportLayout";
 
-export default function ValuationReport({ rows }: { rows: any }) {
+export default function ValuationReport({ rows }: { rows: ValuationRow[] }) {
   return (
     <ReportLayout
       title="Inventory Valuation"
