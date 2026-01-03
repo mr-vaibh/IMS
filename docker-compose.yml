@@ -16,36 +16,21 @@ services:
     ports:
       - "5433:5432"
 
-  license-server:
-    build: ./license-server
-    container_name: ims-license-server
-    restart: always
-    ports:
-      - "5050:5000"
-    volumes:
-      - license-server_license_data:/app/data
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://license-server:5000/health"]
-      interval: 10s
-      timeout: 3s
-      retries: 10
-
   backend:
     build: ./backend
     container_name: ims_backend
-    hostname: ims-backend-prod
     restart: always
     environment:
       RUNNING_IN_DOCKER: "1"
+      LICENSE_MACHINE_ID: ${LICENSE_MACHINE_ID}
     env_file:
       - .env  # Use .env file to load environment variables for the backend service
     depends_on:
       db:
         condition: service_started
-      license-server:
-        condition: service_healthy
     volumes:
       - ./backend/staticfiles:/app/staticfiles
+      - ./backend/license.lic:/app/license.lic
     ports:
       - "8000:8000"
 
@@ -78,4 +63,3 @@ services:
 
 volumes:
   pgdata:
-  license-server_license_data:
