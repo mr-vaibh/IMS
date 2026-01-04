@@ -10,7 +10,9 @@ from django.utils.dateparse import parse_date
 from .services import get_stock_report_data, get_inventory_valuation, get_low_stock_report, get_audit_report, get_adjustment_report
 from .utils import get_signature_block
 
-from inventory.models import InventoryLedger
+from inventory.models import InventoryLedger, InventoryIssue
+from django.http import HttpResponseBadRequest
+
 
 @login_required
 def stock_report_pdf(request):
@@ -213,3 +215,32 @@ def adjustment_report_pdf(request):
     response = HttpResponse(pdf, content_type="application/pdf")
     response["Content-Disposition"] = "inline; filename=adjustment_report.pdf"
     return response
+
+@login_required
+def issue_pass_pdf(request, issue_id):
+    issue = InventoryIssue.objects.select_related(
+        "product",
+        "warehouse",
+        "approved_by",
+        "requested_by",
+    ).get(id=issue_id)
+
+    if issue.status != InventoryIssue.STATUS_APPROVED:
+        return HttpResponseBadRequest("Issue not approved")
+
+    profile = request.user.userprofile
+
+    context = {
+        "company": profile.company.name if profile.company else "—",
+        "generated_at": timezone.now(),
+        "issue": issue,
+        "signature": get_signature_block(profile),
+    }
+
+    html = render_to_string(
+        "reports/issue_pass.html",
+        context,
+    )
+
+    pdf = HTML(string=html).write_pdf()
+    return HttpResponse(pdf, content_type="application/pdf")

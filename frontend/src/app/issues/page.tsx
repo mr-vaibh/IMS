@@ -84,7 +84,7 @@ export default function IssuesPage() {
                   {i.notes || "—"}
                 </td>
                 <td className="px-4 py-3 text-right">
-                  {i.status === "PENDING" && (
+                  {i.status === "PENDING" ? (
                     <div className="inline-flex gap-2">
                       <button
                         className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700"
@@ -99,7 +99,16 @@ export default function IssuesPage() {
                         Reject
                       </button>
                     </div>
-                  )}
+                  ) : (
+                    <a
+                      href={`${process.env.NEXT_PUBLIC_API_URL}/api/inventory/issues/${i.id}/pass/pdf`}
+                      target="_blank"
+                      className="border rounded p-2"
+                    >
+                      Download Issue Pass
+                    </a>
+                  )
+                }
                 </td>
               </tr>
             ))}
