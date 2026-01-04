@@ -73,7 +73,7 @@
 
 {% for copy in "12" %}
   <div class="pass">
-    <div class="title">Inventory Issue Pass</div>
+    <div class="title">Product Issue Pass</div>
 
     <table>
       <tr>
@@ -94,11 +94,15 @@
       </tr>
       <tr>
         <td class="label">Quantity</td>
-        <td>{{ issue.quantity }}</td>
+        <td>{{ issue.quantity }} {{ issue.product.unit }}</td>
       </tr>
       <tr>
-        <td class="label">Reason</td>
-        <td>{{ issue.reason }}</td>
+        <td class="label">Issued For</td>
+        <td>{{ issue.issue_type }}</td>
+      </tr>
+      <tr>
+        <td class="label">Additional Notes</td>
+        <td>{{ issue.notes|default:"N/A" }}</td>
       </tr>
       <tr>
         <td class="label">Approved By</td>
