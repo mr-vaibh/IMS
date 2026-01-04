@@ -19,7 +19,7 @@ export default function MovementReport({
       title="Stock Movement"
       filename="stock_movement.csv"
       rows={rows}
-      pdfEndpoint="/api/reports/movement/pdf"
+      pdfEndpoint="/reports/movement/pdf"
       filters={{ startDate, endDate }}
     >
       <table className="table w-full text-sm">

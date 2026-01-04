@@ -32,7 +32,7 @@ export default function ReportLayout<T>({
     if (filters?.endDate) params.append("end_date", filters.endDate);
 
     const qs = params.toString();
-    const url = `${process.env.NEXT_PUBLIC_API_URL}${pdfEndpoint}${
+    const url = `${pdfEndpoint}${
       qs ? `?${qs}` : ""
     }`;
 

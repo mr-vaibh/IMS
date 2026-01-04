@@ -17,7 +17,7 @@ export default function ValuationReport({ rows }: { rows: ValuationRow[] }) {
       title="Inventory Valuation"
       filename="inventory_valuation.csv"
       rows={rows}
-      pdfEndpoint="/api/reports/valuation/pdf"
+      pdfEndpoint="/reports/valuation/pdf"
     >
       <table className="table w-full text-sm">
         <thead>

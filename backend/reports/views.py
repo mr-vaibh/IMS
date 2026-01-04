@@ -119,7 +119,6 @@ def inventory_valuation_pdf(request):
 
 
 @login_required
-@login_required
 def low_stock_report_pdf(request):
     threshold = int(request.GET.get("threshold", 100))
     raw_rows = get_low_stock_report(threshold)

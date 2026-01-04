@@ -21,7 +21,7 @@ export default function AdjustmentReport({
       title="Inventory Adjustments"
       filename="adjustment_report.csv"
       rows={rows}
-      pdfEndpoint={`/api/reports/adjustments/pdf?${query}`}
+      pdfEndpoint={`/reports/adjustments/pdf?${query}`}
     >
       <table className="table w-full text-sm">
         <thead className="bg-gray-50">

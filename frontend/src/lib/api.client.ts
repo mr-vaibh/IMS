@@ -15,14 +15,22 @@ export class ApiError extends Error {
   }
 }
 
+function getCSRFToken() {
+  return document.cookie
+    .split("; ")
+    .find(row => row.startsWith("csrftoken="))
+    ?.split("=")[1];
+}
+
 export async function apiFetchClient(
   path: string,
   options: RequestInit = {}
 ) {
-  const res = await fetch(`http://localhost:8000/api${path}`, {
+  const res = await fetch(`/api${path}`, {
     ...options,
     credentials: "include",
     headers: {
+      "X-CSRFToken": getCSRFToken() || "",
       "Content-Type": "application/json",
       ...(options.headers || {}),
     },

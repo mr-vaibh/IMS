@@ -101,7 +101,7 @@ export default function IssuesPage() {
                     </div>
                   ) : (
                     <a
-                      href={`${process.env.NEXT_PUBLIC_API_URL}/api/inventory/issues/${i.id}/pass/pdf`}
+                      href={`/api/inventory/issues/${i.id}/pass/pdf`}
                       target="_blank"
                       className="border rounded p-2"
                     >

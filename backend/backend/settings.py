@@ -56,9 +56,12 @@ INSTALLED_APPS = [
 ]
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "core.authentication.CookieJWTAuthentication",
-    ),
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
 }
 
 MIDDLEWARE = [
@@ -175,6 +178,12 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=10),
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
+
+# settings.py
+SESSION_COOKIE_DOMAIN = None
+SESSION_COOKIE_PATH = "/"
+SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SECURE = False
 
 LOGGING = {
     "version": 1,

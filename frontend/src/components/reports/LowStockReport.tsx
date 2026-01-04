@@ -14,7 +14,7 @@ export default function LowStockReport({
       title="Low Stock"
       filename="low_stock_report.csv"
       rows={rows}
-      pdfEndpoint={`/api/reports/low-stock/pdf?threshold=${threshold}`}
+      pdfEndpoint={`/reports/low-stock/pdf?threshold=${threshold}`}
     >
       <table className="table w-full text-sm">
         <thead className="bg-gray-50">

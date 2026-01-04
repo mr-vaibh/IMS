@@ -3,10 +3,11 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
-from .views import CookieTokenObtainPairView, logout
+
+from .auth import login_view, logout_view
 
 urlpatterns = [
-    path("login", CookieTokenObtainPairView.as_view()),
-    path("refresh", TokenRefreshView.as_view()),
-    path("logout", logout),
+    path("login", login_view),
+    # path("refresh", TokenRefreshView.as_view()),
+    path("logout", logout_view),
 ]

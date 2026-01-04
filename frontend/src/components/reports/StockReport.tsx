@@ -19,7 +19,7 @@ export default function StockReport({ rows }: { rows: StockReportRow[] }) {
       title="Current Stock"
       filename="current_stock.csv"
       rows={visibleRows}
-      pdfEndpoint="/api/reports/stock/pdf"
+      pdfEndpoint="/reports/stock/pdf"
     >
       {/* Pagination control */}
       <div className="p-3 border-b bg-gray-50 flex gap-3 justify-end items-center text-sm">

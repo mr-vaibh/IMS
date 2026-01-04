@@ -1,5 +1,5 @@
 export async function apiFetchServer(path: string) {
-  const res = await fetch(`http://localhost:8000/api${path}`, {
+  const res = await fetch(`/api${path}`, {
     cache: "no-store",
   });
 

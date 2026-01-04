@@ -36,7 +36,7 @@ DB_PORT=5432
 
 
 # PDF
-pdfEndpoint="/api/reports/stock/pdf"
+pdfEndpoint="/reports/stock/pdf"
 
 brew install cairo pango gdk-pixbuf glib libffi
 export PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig"
