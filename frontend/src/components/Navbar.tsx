@@ -137,6 +137,9 @@ export default function Navbar() {
 
         {/* Logout Button */}
         <div className="hidden md:block ml-4">
+          {user && (
+            <span className="text-slate-700 font-medium mr-4">{user.username}</span>
+          )}
           <button onClick={logout} className="btn-ghost">
             Logout
           </button>
@@ -149,16 +152,6 @@ export default function Navbar() {
           <Link href="/inventory" className="block navbar-link" onClick={() => setMobileMenuOpen(false)}>
             Inventory
           </Link>
-          {hasPermission(perms, "inventory.view") && (
-            <Link href="/reports" className="block navbar-link" onClick={() => setMobileMenuOpen(false)}>
-              Reports
-            </Link>
-          )}
-          {hasPermission(perms, "inventory.view_audit") && (
-            <Link href="/audit" className="block navbar-link" onClick={() => setMobileMenuOpen(false)}>
-              Audit
-            </Link>
-          )}
           {hasPermission(perms, "inventory.view_orders") && (
             <Link href="/orders" className="block navbar-link" onClick={() => setMobileMenuOpen(false)}>
               Orders
@@ -167,6 +160,16 @@ export default function Navbar() {
           {hasPermission(perms, "inventory.issue_view") && (
             <Link href="/issues" className="block navbar-link" onClick={() => setMobileMenuOpen(false)}>
               Issues
+            </Link>
+          )}
+          {hasPermission(perms, "inventory.view") && (
+            <Link href="/reports" className="block navbar-link" onClick={() => setMobileMenuOpen(false)}>
+              Reports
+            </Link>
+          )}
+          {hasPermission(perms, "inventory.view_audit") && (
+            <Link href="/audit" className="block navbar-link" onClick={() => setMobileMenuOpen(false)}>
+              Audit
             </Link>
           )}
 

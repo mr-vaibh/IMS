@@ -47,7 +47,7 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'core.apps.CoreConfig',
-    'users',
+    'users.apps.UsersConfig',
     'rbac.apps.RbacConfig',
     'api',
     'company.apps.CompanyConfig',

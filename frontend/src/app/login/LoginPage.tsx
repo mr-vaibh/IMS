@@ -9,12 +9,11 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const { refresh } = useAuth();
 
-  const [username, setUsername] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string>("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  // Redirect target from middleware
   const next = searchParams.get("next") || "/inventory";
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
@@ -35,10 +34,7 @@ export default function LoginPage() {
         throw new Error(data?.detail || data?.message || "Invalid credentials");
       }
 
-      // Update permissions so Navbar reflects new state immediately
       await refresh();
-
-      // Redirect to intended page
       router.replace(next);
     } catch (err: any) {
       setError(err.message || "Login failed");
@@ -48,41 +44,72 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
+    <div className="relative flex min-h-screen items-center justify-center px-4">
+      {/* Soft background glow */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.15),transparent_60%)]" />
+
       <form
         onSubmit={submit}
-        className="w-80 space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-md"
+        className="relative w-full max-w-sm space-y-5 rounded-2xl bg-white/95 p-8 shadow-2xl backdrop-blur"
       >
-        <h1 className="text-lg font-semibold text-slate-800">Login</h1>
+        {/* Brand */}
+        <div className="text-center space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            Inventory Management System
+          </h1>
+          <p className="text-sm text-slate-500">
+            by <span className="font-semibold text-slate-700">Allorasoft</span>
+          </p>
+        </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {/* Divider */}
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-slate-200" />
+          <span className="text-xs uppercase tracking-wide text-slate-400">
+            Secure Login
+          </span>
+          <div className="h-px flex-1 bg-slate-200" />
+        </div>
 
-        <input
-          className="w-full rounded border border-slate-300 p-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-        />
+        {error && (
+          <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {error}
+          </div>
+        )}
 
-        <input
-          type="password"
-          className="w-full rounded border border-slate-300 p-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+        <div className="space-y-3">
+          <input
+            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/30"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
+
+          <input
+            type="password"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/30"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
 
         <button
           type="submit"
           disabled={loading}
-          className={`w-full rounded bg-blue-600 py-2 text-white transition hover:bg-blue-700 ${
-            loading ? "opacity-60 cursor-not-allowed" : ""
-          }`}
+          className="group relative w-full overflow-hidden rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600/40 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {loading ? "Logging in..." : "Login"}
+          <span className="relative z-10">
+            {loading ? "Signing in…" : "Sign In"}
+          </span>
+          <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
         </button>
+
+        <p className="text-center text-xs text-slate-400">
+          © {new Date().getFullYear()} Allorasoft. All rights reserved.
+        </p>
       </form>
     </div>
   );

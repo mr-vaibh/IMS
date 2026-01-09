@@ -55,7 +55,7 @@ def my_profile(request):
     return Response({
         "username": request.user.username,
         "role": profile.role.name if profile.role else None,
-        "email": request.user.email,
+        "email": profile.email or request.user.email,
         "full_name": profile.full_name,
         "company_id": str(profile.company.id) if profile.company else None,
         "company_name": profile.company.name if profile.company else None,
