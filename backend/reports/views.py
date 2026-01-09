@@ -75,7 +75,7 @@ def movement_report_pdf(request):
     context = {
         "company": profile.company.name if profile.company else "—",
         "generated_at": timezone.now(),
-        "signed_by": profile.full_name,
+        "signed_by": profile.user.get_full_name(),
         "role": profile.role.name,
         "rows": qs,
         "filters": {
