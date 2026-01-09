@@ -227,13 +227,16 @@ def purchase_order_pdf(request, order_id):
 
     if order.status != InventoryOrder.STATUS_APPROVED:
         return HttpResponseBadRequest("Order not approved")
-    
+
     profile = request.user.userprofile
+
+    total_price = order.product.price * order.delta
 
     context = {
         "company": profile.company.name if profile.company else "—",
         "generated_at": timezone.now(),
         "order": order,
+        "total_price": total_price,
         "signature": get_signature_block(profile),
     }
 
