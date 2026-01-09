@@ -24,6 +24,7 @@ export default function LowStockReport({
             <th className="p-2 text-right">Current Qty</th>
             <th className="p-2 text-right">Threshold</th>
             <th className="p-2 text-right">Shortfall</th>
+            <th className="p-2 text-right">Unit</th>
           </tr>
         </thead>
 
@@ -54,22 +55,26 @@ export default function LowStockReport({
                     {r.warehouse_name}
                   </td>
 
-                  <td className="p-2 text-right font-semibold text-red-600 tabular-nums">
+                  <td className="p-2 text-center font-semibold text-red-600 tabular-nums">
                     {r.quantity}
                   </td>
 
-                  <td className="p-2 text-right tabular-nums text-gray-700">
+                  <td className="p-2 text-center tabular-nums text-gray-700">
                     {threshold}
                   </td>
 
                   <td
-                    className={`p-2 text-right font-semibold tabular-nums ${
+                    className={`p-2 text-center font-semibold tabular-nums ${
                       shortfall > 0
                         ? "text-red-700"
                         : "text-gray-600"
                     }`}
                   >
                     {shortfall}
+                  </td>
+
+                  <td className="p-2 text-center tabular-nums text-gray-700">
+                    {r.unit}
                   </td>
                 </tr>
               );

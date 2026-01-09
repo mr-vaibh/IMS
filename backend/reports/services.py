@@ -13,6 +13,7 @@ def get_stock_report_data():
             "quantity",                       # ✅ direct field
             product_name=F("product__name"),
             warehouse_name=F("warehouse__name"),
+            unit=F("product__unit"),
         )
         .order_by("product__name", "warehouse__name")
     )
@@ -28,6 +29,7 @@ def get_inventory_valuation():
             product_name=F("product__name"),
             warehouse_name=F("warehouse__name"),
             unit_cost=F("product__cost_price"),
+            unit=F("product__unit"),
         )
         .annotate(
             total_value=ExpressionWrapper(
@@ -47,6 +49,7 @@ def get_low_stock_report(threshold: int = 10):
             "quantity",
             product_name=F("product__name"),
             warehouse_name=F("warehouse__name"),
+            unit=F("product__unit"),
         )
         .order_by("product__name")
     )

@@ -127,7 +127,7 @@ tbody td {
       <td class="col-change">{{ r.change }}</td>
       <td class="col-balance">{{ r.balance_after }}</td>
       <td class="col-ref mono">{{ r.reference_id }}</td>
-      <td class="col-user">{{ r.created_by|default:"System" }}</td>
+      <td class="col-user">{{ r.created_by__username|default:"System" }}</td>
     </tr>
     {% endfor %}
   </tbody>

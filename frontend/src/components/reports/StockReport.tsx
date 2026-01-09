@@ -88,7 +88,7 @@ export default function StockReport({ rows }: { rows: StockReportRow[] }) {
                       </div>
 
                       <span className="font-bold tabular-nums min-w-[3rem] text-right">
-                        {r.quantity}
+                        {r.quantity} {r.unit}
                       </span>
                     </div>
                   </td>

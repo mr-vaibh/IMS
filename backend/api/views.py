@@ -111,6 +111,7 @@ def inventory_list(request):
                 "supplier_id": s.product.supplier.id if s.product.supplier else None,
                 "supplier_name": s.product.supplier.name if s.product.supplier else None,
                 "quantity": s.quantity,
+                "unit": s.product.unit
             }
             for s in items
         ],
@@ -513,6 +514,7 @@ def stock_report(request):
             "warehouse_id": s.warehouse.id,
             "warehouse_name": s.warehouse.name,
             "quantity": s.quantity,
+            "unit": s.product.unit,
         }
         for s in qs
     ])

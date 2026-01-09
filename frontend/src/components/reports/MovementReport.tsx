@@ -28,8 +28,8 @@ export default function MovementReport({
             <th className="p-2">Time</th>
             <th className="p-2">Product</th>
             <th className="p-2">Warehouse</th>
-            <th className="p-2 text-right">Change</th>
-            <th className="p-2 text-right">Balance</th>
+            <th className="p-2 text-center">Change</th>
+            <th className="p-2 text-center">Balance</th>
           </tr>
         </thead>
 
@@ -59,7 +59,7 @@ export default function MovementReport({
                 </td>
 
                 <td
-                  className={`p-2 text-right font-medium tabular-nums ${
+                  className={`p-2 text-center font-medium tabular-nums ${
                     r.change > 0
                       ? "text-green-600"
                       : r.change < 0
@@ -70,7 +70,7 @@ export default function MovementReport({
                   {r.change > 0 ? `+${r.change}` : r.change}
                 </td>
 
-                <td className="p-2 text-right tabular-nums text-gray-800">
+                <td className="p-2 text-center tabular-nums text-gray-800">
                   {r.balance_after}
                 </td>
               </tr>

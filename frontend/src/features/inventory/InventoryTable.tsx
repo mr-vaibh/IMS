@@ -69,19 +69,23 @@ export default function InventoryTable({
         },
       },
       {
-        header: "Qty",
-        accessorKey: "quantity",
-        cell: (info) => info.getValue(),
-        meta: { align: "right" },
-        filterFn: (row, id, value) => {
-          const rowValue = row.getValue<number>(id);
-          const [operator, num] = value;
-          if (operator === "gt") return rowValue > num;
-          if (operator === "lt") return rowValue < num;
-          if (operator === "eq") return rowValue === num;
-          return true;
-        },
-      },
+  header: "Qty",
+  accessorKey: "quantity",
+  cell: (info) => {
+    const quantity = info.getValue<number>();
+    const unit = info.row.original.unit; // Access unit from original row data
+    return `${quantity} ${unit || ""}`.trim();
+  },
+  meta: { align: "right" },
+  filterFn: (row, id, value) => {
+    const rowValue = row.getValue<number>(id);
+    const [operator, num] = value;
+    if (operator === "gt") return rowValue > num;
+    if (operator === "lt") return rowValue < num;
+    if (operator === "eq") return rowValue === num;
+    return true;
+  },
+},
       {
         header: "Actions",
         id: "actions",

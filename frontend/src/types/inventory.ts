@@ -6,4 +6,5 @@ export interface InventoryRow {
   supplier_id?: string;
   supplier_name?: string;
   quantity: number;
+  unit: string;
 }
