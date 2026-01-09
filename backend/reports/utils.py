@@ -15,7 +15,7 @@ def get_signature_block(profile):
         return None
 
     return {
-        "signed_by": profile.full_name,
+        "signed_by": profile.user.get_full_name,
         "role": profile.role.name,
         "signed_at": timezone.now(),
         "statement": (

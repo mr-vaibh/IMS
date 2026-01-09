@@ -1,70 +1,97 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8">
   <style>
     body {
       font-family: Arial, sans-serif;
-      font-size: 12px;
+      font-size: 10.5px;
+      color: #000;
+      margin: 10mm;
     }
 
     .pass {
       border: 1px solid #000;
-      padding: 16px;
-      margin-bottom: 24px;
-      position: relative;
-      min-height: 320px;
+      padding: 12px;      /* reduced */
     }
 
     .divider {
       border-top: 2px dashed #000;
-      margin: 24px 0;
+      margin: 16px 0;     /* reduced */
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 8px; /* reduced */
+    }
+
+    .company-name {
+      font-size: 15px;    /* reduced */
+      font-weight: bold;
+      letter-spacing: 0.4px;
+    }
+
+    .subtitle {
+      font-size: 10px;
+      margin-top: 2px;
+      color: #444;
     }
 
     .title {
-      text-align: center;
-      font-size: 16px;
+      margin-top: 6px;
+      font-size: 13px;
       font-weight: bold;
-      margin-bottom: 14px;
+      text-decoration: underline;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
+      margin-top: 8px;   /* reduced */
     }
 
-    td {
-      padding: 4px;
+    td, th {
+      border: 1px solid #000;
+      padding: 5px;      /* reduced */
       vertical-align: top;
     }
 
     .label {
-      font-weight: bold;
       width: 30%;
+      font-weight: bold;
+      background: #fafafa;
     }
 
-    /* Signature at bottom-right */
-    .signature-section {
-      position: absolute;
-      right: 16px;
-      bottom: 48px;
+    .value {
+      width: 70%;
+    }
+
+    .signature {
+      margin-top: 28px;  /* reduced */
       text-align: right;
-      width: 150px;
-      margin-right: 50px;
     }
 
     .signature-line {
+      width: 180px;      /* reduced */
       border-top: 1px solid #000;
+      margin-left: auto;
       margin-bottom: 4px;
-      margin-right: -50px;
-    }
-
-    .signature-label {
-      font-size: 11px;
     }
 
     .footer {
-      margin-top: 48px;
-      font-size: 11px;
+      margin-top: 14px;  /* reduced */
+      font-size: 9px;
+      color: #444;
+      text-align: center;
+    }
+
+    @media print {
+      .pass {
+        page-break-inside: avoid;
+      }
+      .divider {
+        page-break-after: avoid;
+      }
     }
   </style>
 </head>
@@ -72,63 +99,65 @@
 <body>
 
 {% for copy in "12" %}
-  <div class="pass">
-    <div class="title">Product Issue Pass</div>
+<div class="pass">
 
-    <table>
-      <tr>
-        <td class="label">Company</td>
-        <td>{{ company }}</td>
-      </tr>
-      <tr>
-        <td class="label">Issue ID</td>
-        <td>{{ issue.id }}</td>
-      </tr>
-      <tr>
-        <td class="label">Product</td>
-        <td>{{ issue.product.name }}</td>
-      </tr>
-      <tr>
-        <td class="label">Warehouse</td>
-        <td>{{ issue.warehouse.name }}</td>
-      </tr>
-      <tr>
-        <td class="label">Quantity</td>
-        <td>{{ issue.quantity }} {{ issue.product.unit }}</td>
-      </tr>
-      <tr>
-        <td class="label">Issued For</td>
-        <td>{{ issue.issue_type }}</td>
-      </tr>
-      <tr>
-        <td class="label">Additional Notes</td>
-        <td>{{ issue.notes|default:"N/A" }}</td>
-      </tr>
-      <tr>
-        <td class="label">Approved By</td>
-        <td>{{ issue.approved_by.get_full_name|default:issue.approved_by.username }}</td>
-      </tr>
-      <tr>
-        <td class="label">Approved At</td>
-        <td>{{ issue.approved_at|date:"Y-m-d H:i" }}</td>
-      </tr>
-    </table>
-
-    <!-- Authorised Signature Bottom Right -->
-    <div class="signature-section">
-      <div class="signature-line"></div>
-      <div class="signature-label">Authorised Signature</div>
-    </div>
-
-    <div class="footer">
-      Generated at {{ generated_at|date:"Y-m-d H:i" }}<br/>
-      This document digitally authorizes stock movement from the warehouse.
-    </div>
+  <div class="header">
+    <div class="company-name">{{ company }}</div>
+    <div class="title">PRODUCT ISSUE PASS</div>
   </div>
 
-  {% if not forloop.last %}
-    <div class="divider"></div>
-  {% endif %}
+  <table>
+    <tr>
+      <td class="label">Issue ID</td>
+      <td class="value">{{ issue.id }}</td>
+    </tr>
+    <tr>
+      <td class="label">Product</td>
+      <td class="value">{{ issue.product.name }}</td>
+    </tr>
+    <tr>
+      <td class="label">Warehouse</td>
+      <td class="value">{{ issue.warehouse.name }}</td>
+    </tr>
+    <tr>
+      <td class="label">Quantity Issued</td>
+      <td class="value">{{ issue.quantity }} {{ issue.product.unit }}</td>
+    </tr>
+    <tr>
+      <td class="label">Issued For</td>
+      <td class="value">{{ issue.issue_type }}</td>
+    </tr>
+    <tr>
+      <td class="label">Additional Notes</td>
+      <td class="value">{{ issue.notes|default:"N/A" }}</td>
+    </tr>
+    <tr>
+      <td class="label">Approved By</td>
+      <td class="value">
+        {{ issue.approved_by.get_full_name|default:issue.approved_by.username }}
+      </td>
+    </tr>
+    <tr>
+      <td class="label">Approved At</td>
+      <td class="value">{{ issue.approved_at|date:"d.m.Y H:i" }}</td>
+    </tr>
+  </table>
+
+  <div class="signature">
+    <div class="signature-line"></div>
+    <div>Authorised Signature</div>
+  </div>
+
+  <div class="footer">
+    Generated on {{ generated_at|date:"d.m.Y H:i" }}<br/>
+    This document authorizes inventory movement from the warehouse.
+  </div>
+
+</div>
+
+{% if not forloop.last %}
+  <div class="divider"></div>
+{% endif %}
 {% endfor %}
 
 </body>
