@@ -2,20 +2,20 @@
 
 import { apiFetchClient } from "@/lib/api.client";
 
-export default function AdjustmentActions({ adjustment }: { adjustment: any }) {
-  if (adjustment.status !== "PENDING") {
+export default function OrderActions({ order }: { order: any }) {
+  if (order.status !== "PENDING") {
     return null;
   }
 
   async function approve() {
-    await apiFetchClient(`/inventory/adjustments/${adjustment.id}/approve`, {
+    await apiFetchClient(`/inventory/orders/${order.id}/approve`, {
       method: "POST",
     });
     window.location.reload();
   }
 
   async function reject() {
-    await apiFetchClient(`/inventory/adjustments/${adjustment.id}/reject`, {
+    await apiFetchClient(`/inventory/orders/${order.id}/reject`, {
       method: "POST",
     });
     window.location.reload();

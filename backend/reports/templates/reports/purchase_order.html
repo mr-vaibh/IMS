@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 11px;
+    }
+
+    .pass {
+      border: 1px solid #000;
+      padding: 16px;
+      min-height: 350px;
+    }
+
+    .divider {
+      border-top: 2px dashed #000;
+      margin: 24px 0;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .company-name {
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .subtitle {
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .title {
+      margin-top: 12px;
+      font-size: 14px;
+      font-weight: bold;
+      text-decoration: underline;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+
+    td, th {
+      border: 1px solid #000;
+      padding: 6px;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f2f2f2;
+      font-weight: bold;
+    }
+
+    .label {
+      width: 30%;
+      font-weight: bold;
+    }
+
+    .signature {
+      margin-top: 50px;
+      text-align: right;
+    }
+
+    .signature-line {
+      width: 200px;
+      border-top: 1px solid #000;
+      margin-left: auto;
+    }
+
+    .footer {
+      margin-top: 24px;
+      font-size: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+{% for copy in "12" %}
+  <div class="pass">
+
+    <div class="header">
+      <div class="company-name">{{ company.name }}</div>
+      <div class="subtitle">{{ company.address|default:"" }}</div>
+      <div class="title">PURCHASE ORDER</div>
+    </div>
+
+    <table>
+      <tr>
+        <td class="label">PO Number</td>
+        <td>{{ order.id|stringformat:"s"|slice:":8" }}</td>
+        <td class="label">PO Date</td>
+        <td>{{ order.created_at|date:"d.m.Y" }}</td>
+      </tr>
+      <tr>
+        <td class="label">Product</td>
+        <td colspan="3">{{ order.product.name }}</td>
+      </tr>
+      <tr>
+        <td class="label">Warehouse</td>
+        <td colspan="3">{{ order.warehouse.name }}</td>
+      </tr>
+      <tr>
+        <td class="label">Quantity</td>
+        <td>{{ order.delta }}</td>
+        <td class="label">Status</td>
+        <td>{{ order.status }}</td>
+      </tr>
+      <tr>
+        <td class="label">Reason</td>
+        <td colspan="3">{{ order.reason }}</td>
+      </tr>
+      <tr>
+        <td class="label">Approved By</td>
+        <td>{{ order.approved_by.get_full_name|default:order.approved_by.username }}</td>
+        <td class="label">Approved At</td>
+        <td>{{ order.approved_at|date:"d.m.Y H:i" }}</td>
+      </tr>
+    </table>
+
+    <div class="signature">
+      <div class="signature-line"></div>
+      <div>Authorised Signature</div>
+    </div>
+
+    <div class="footer">
+      Generated on {{ generated_at|date:"d.m.Y H:i" }}<br/>
+      This document authorizes inventory movement.
+    </div>
+
+  </div>
+
+  {% if not forloop.last %}
+    <div class="divider"></div>
+  {% endif %}
+{% endfor %}
+
+</body>
+</html>

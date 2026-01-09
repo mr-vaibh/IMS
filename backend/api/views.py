@@ -17,12 +17,12 @@ from core.audit.models import AuditLog
 from core.audit.logger import AuditLogger
 from core.audit.enums import AuditAction
 from rbac.services import user_has_permission
-from inventory.models import Product, InventoryStock, InventoryLedger, Warehouse, InventoryAdjustment, InventoryIssue
+from inventory.models import Product, InventoryStock, InventoryLedger, Warehouse, InventoryOrder, InventoryIssue
 from company.models import Supplier
 from inventory.services import (
-    request_adjustment_service,
-    approve_adjustment_service,
-    reject_adjustment_service,
+    request_order_service,
+    approve_order_service,
+    reject_order_service,
     bulk_stock_in_service,
     approve_issue,
     reject_issue,
@@ -489,7 +489,7 @@ def audit_list(request):
 # ================ Reports Views =================
 
 
-from reports.services import get_inventory_valuation, get_low_stock_report, get_audit_report, get_adjustment_report
+from reports.services import get_inventory_valuation, get_low_stock_report, get_audit_report, get_order_report
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -603,14 +603,14 @@ def audit_report(request):
 
 
 @api_view(["GET"])
-def adjustment_report(request):
+def order_report(request):
     filters = {
         "start_date": request.GET.get("start_date"),
         "end_date": request.GET.get("end_date"),
         "status": request.GET.get("status"),
     }
 
-    data = get_adjustment_report(filters)
+    data = get_order_report(filters)
     return Response({"items": data})
 
 
@@ -715,12 +715,12 @@ def bulk_stock_in(request):
 
 
 
-# ================ Adjustment Views =====================
+# ================ Order Views =====================
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-def adjustment_list(request):
-    if not user_has_permission(request.user, "inventory.view_adjustments"):
+def order_list(request):
+    if not user_has_permission(request.user, "inventory.view_orders"):
         return Response({"message": "Forbidden"}, status=403)
 
     profile = request.user.userprofile
@@ -733,7 +733,7 @@ def adjustment_list(request):
         )
 
     qs = (
-        InventoryAdjustment.objects
+        InventoryOrder.objects
         .select_related("product", "warehouse")
         .filter(warehouse__company=company)
         .order_by("-created_at")
@@ -762,12 +762,12 @@ def adjustment_list(request):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def request_adjustment(request):
+def request_order(request):
     if not user_has_permission(request.user, "inventory.adjust"):
         return Response({"message": "Forbidden"}, status=403)
 
     try:
-        adj = request_adjustment_service(
+        adj = request_order_service(
             product_id=request.data["product_id"],
             warehouse_id=request.data["warehouse_id"],
             delta=int(request.data["delta"]),
@@ -785,10 +785,10 @@ def request_adjustment(request):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def approve_adjustment(request, pk):
+def approve_order(request, pk):
     try:
-        approve_adjustment_service(
-            adjustment_id=pk,
+        approve_order_service(
+            order_id=pk,
             actor=get_actor(request),
         )
     except Exception as e:
@@ -799,10 +799,10 @@ def approve_adjustment(request, pk):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def reject_adjustment(request, pk):
+def reject_order(request, pk):
     try:
-        reject_adjustment_service(
-            adjustment_id=pk,
+        reject_order_service(
+            order_id=pk,
             actor=get_actor(request),
         )
     except Exception as e:

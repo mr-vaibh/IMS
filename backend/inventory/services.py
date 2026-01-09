@@ -7,7 +7,7 @@ from django.forms.models import model_to_dict
 from core.audit.enums import AuditAction
 from core.audit.logger import AuditLogger
 from rbac.services import user_has_permission
-from inventory.models import InventoryStock, InventoryLedger, InventoryAdjustment, Product, Warehouse, InventoryIssue
+from inventory.models import InventoryStock, InventoryLedger, InventoryOrder, Product, Warehouse, InventoryIssue
 from users.models import UserProfile
 
 from django.contrib.auth import get_user_model
@@ -300,7 +300,7 @@ def transfer_stock_service(
 
 
 @transaction.atomic
-def request_adjustment_service(
+def request_order_service(
     *,
     product_id,
     warehouse_id,
@@ -319,7 +319,7 @@ def request_adjustment_service(
     if delta == 0:
         raise ValueError("Delta cannot be zero")
 
-    adjustment = InventoryAdjustment.objects.create(
+    order = InventoryOrder.objects.create(
         product_id=product_id,
         warehouse_id=warehouse_id,
         delta=delta,
@@ -328,8 +328,8 @@ def request_adjustment_service(
     )
 
     AuditLogger.log(
-        entity="inventory_adjustment",
-        entity_id=adjustment.id,
+        entity="inventory_order",
+        entity_id=order.id,
         action=AuditAction.CREATE,
         actor=actor,
         new_data={
@@ -340,14 +340,14 @@ def request_adjustment_service(
         },
     )
 
-    return adjustment
+    return order
 
 
 
 @transaction.atomic
-def approve_adjustment_service(
+def approve_order_service(
     *,
-    adjustment_id,
+    order_id,
     actor,
 ):
     if not isinstance(actor, User):
@@ -355,12 +355,12 @@ def approve_adjustment_service(
 
     user = User.objects.get(id=actor.id)
 
-    if not user_has_permission(user, "inventory.approve_adjustment"):
+    if not user_has_permission(user, "inventory.approve_order"):
         raise PermissionError("Not allowed")
 
-    adj = InventoryAdjustment.objects.select_for_update().get(id=adjustment_id)
+    adj = InventoryOrder.objects.select_for_update().get(id=order_id)
 
-    if adj.status != InventoryAdjustment.STATUS_PENDING:
+    if adj.status != InventoryOrder.STATUS_PENDING:
         raise ValueError("Already decided")
 
     product = adj.product
@@ -376,7 +376,7 @@ def approve_adjustment_service(
     )
 
     if adj.delta < 0 and stock.quantity < abs(adj.delta):
-        raise ValueError("Insufficient stock for adjustment")
+        raise ValueError("Insufficient stock for order")
 
     old_stock = model_to_dict(stock)
 
@@ -389,13 +389,13 @@ def approve_adjustment_service(
         warehouse=warehouse,
         change=adj.delta,
         balance_after=stock.quantity,
-        reference_type="ADJUSTMENT",
+        reference_type="ORDER",
         reference_id=adj.id,
         reason=adj.reason,
         created_by=actor,
     )
 
-    adj.status = InventoryAdjustment.STATUS_APPROVED
+    adj.status = InventoryOrder.STATUS_APPROVED
     adj.approved_by = actor
     adj.approved_at = now()
     adj.save()
@@ -410,7 +410,7 @@ def approve_adjustment_service(
     )
 
     AuditLogger.log(
-        entity="inventory_adjustment",
+        entity="inventory_order",
         entity_id=adj.id,
         action=AuditAction.UPDATE,
         actor=actor,
@@ -421,30 +421,30 @@ def approve_adjustment_service(
 
 
 @transaction.atomic
-def reject_adjustment_service(
+def reject_order_service(
     *,
-    adjustment_id,
+    order_id,
     actor,
 ):
     if not isinstance(actor, User):
         raise ValueError("actor must be a User instance")
 
     user = User.objects.get(id=actor.id)
-    if not user_has_permission(user, "inventory.approve_adjustment"):
+    if not user_has_permission(user, "inventory.approve_order"):
         raise PermissionError("Not allowed")
 
-    adj = InventoryAdjustment.objects.select_for_update().get(id=adjustment_id)
+    adj = InventoryOrder.objects.select_for_update().get(id=order_id)
 
-    if adj.status != InventoryAdjustment.STATUS_PENDING:
+    if adj.status != InventoryOrder.STATUS_PENDING:
         raise ValueError("Already decided")
 
-    adj.status = InventoryAdjustment.STATUS_REJECTED
+    adj.status = InventoryOrder.STATUS_REJECTED
     adj.approved_by = actor
     adj.approved_at = now()
     adj.save()
 
     AuditLogger.log(
-        entity="inventory_adjustment",
+        entity="inventory_order",
         entity_id=adj.id,
         action=AuditAction.UPDATE,
         actor=actor,

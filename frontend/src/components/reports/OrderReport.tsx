@@ -2,7 +2,7 @@
 
 import ReportLayout from "./ReportLayout";
 
-export default function AdjustmentReport({
+export default function OrderReport({
   rows,
   startDate,
   endDate,
@@ -18,10 +18,10 @@ export default function AdjustmentReport({
   const query = params.toString();
   return (
     <ReportLayout
-      title="Inventory Adjustments"
-      filename="adjustment_report.csv"
+      title="Inventory Orders"
+      filename="order_report.csv"
       rows={rows}
-      pdfEndpoint={`/reports/adjustments/pdf?${query}`}
+      pdfEndpoint={`/reports/orders/pdf?${query}`}
     >
       <table className="table w-full text-sm">
         <thead className="bg-gray-50">
@@ -41,7 +41,7 @@ export default function AdjustmentReport({
           {rows.length === 0 ? (
             <tr>
               <td colSpan={8} className="p-4 text-center text-gray-500">
-                No adjustment records found
+                No order records found
               </td>
             </tr>
           ) : (

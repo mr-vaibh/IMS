@@ -54,7 +54,7 @@ The system is built to scale from **small teams** to **enterprise workflows**.
 ### 📜 Inventory Ledger
 
 * Immutable history of **every stock movement**.
-* Stock In, Stock Out, Transfers, Adjustments.
+* Stock In, Stock Out, Transfers, Orders.
 * Used for reporting and traceability.
 
 > Ledger answers: *What happened? When? Why?*
@@ -87,7 +87,7 @@ Permissions control:
 * Creating products / warehouses
 * Stock in / out
 * Transfers
-* Adjustment approvals
+* Order approvals
 * Viewing audit logs
 
 ---
@@ -180,11 +180,11 @@ At any time, a user works within **one active company**.
 
 ---
 
-## 6. Inventory Adjustment (Exception Handling)
+## 6. Inventory Order (Exception Handling)
 
-### What is an Adjustment?
+### What is an Order?
 
-An **adjustment** is used when the system stock does not match reality.
+An **order** is used when the system stock does not match reality.
 
 Examples:
 
@@ -195,7 +195,7 @@ Examples:
 
 ---
 
-### 6.1 Request Adjustment
+### 6.1 Request Order
 
 **Who:** Staff / Manager
 **Status:** PENDING
@@ -204,7 +204,7 @@ Examples:
 
 1. Select product
 2. Select warehouse
-3. Enter adjustment (+ / -)
+3. Enter order (+ / -)
 4. Enter reason (mandatory)
 5. Submit
 
@@ -215,7 +215,7 @@ Examples:
 
 ---
 
-### 6.2 Approve / Reject Adjustment
+### 6.2 Approve / Reject Order
 
 **Who:** Admin / Authorized Manager
 
@@ -260,7 +260,7 @@ Every critical action is logged:
 * Warehouse creation
 * Stock in / out
 * Transfers
-* Adjustments
+* Orders
 * Approvals
 
 Audit logs show:
@@ -298,8 +298,8 @@ Errors are:
 4. Performs stock-in for new arrivals
 5. Transfers stock between warehouses
 6. Performs stock-out for sales
-7. Requests adjustment if mismatch found
-8. Admin approves adjustment
+7. Requests order if mismatch found
+8. Admin approves order
 9. Views reports and audit logs
 
 ---

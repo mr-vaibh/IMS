@@ -39,7 +39,7 @@ class InventoryLedger(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
 
-class InventoryAdjustment(models.Model):
+class InventoryOrder(models.Model):
     STATUS_PENDING = "PENDING"
     STATUS_APPROVED = "APPROVED"
     STATUS_REJECTED = "REJECTED"
@@ -63,10 +63,10 @@ class InventoryAdjustment(models.Model):
     )
 
     requested_by = models.ForeignKey(
-        User, on_delete=models.PROTECT, related_name="requested_adjustments"
+        User, on_delete=models.PROTECT, related_name="requested_orders"
     )
     approved_by = models.ForeignKey(
-        User, null=True, blank=True, on_delete=models.PROTECT, related_name="approved_adjustments"
+        User, null=True, blank=True, on_delete=models.PROTECT, related_name="approved_orders"
     )
 
     created_at = models.DateTimeField(auto_now_add=True)

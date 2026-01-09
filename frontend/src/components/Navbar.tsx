@@ -74,6 +74,18 @@ export default function Navbar() {
             Inventory
           </Link>
 
+          {hasPermission(perms, "inventory.view_orders") && (
+            <Link href="/orders" className="navbar-link">
+              Orders
+            </Link>
+          )}
+
+          {hasPermission(perms, "inventory.issue_view") && (
+            <Link href="/issues" className="navbar-link">
+              Issues
+            </Link>
+          )}
+
           {hasPermission(perms, "inventory.view") && (
             <Link href="/reports" className="navbar-link">
               Reports
@@ -86,17 +98,6 @@ export default function Navbar() {
             </Link>
           )}
 
-          {hasPermission(perms, "inventory.view_adjustments") && (
-            <Link href="/adjustments" className="navbar-link">
-              Adjustments
-            </Link>
-          )}
-
-          {hasPermission(perms, "inventory.issue_view") && (
-            <Link href="/issues" className="navbar-link">
-              Issues
-            </Link>
-          )}
         </div>
 
         {/* Mobile Hamburger */}
@@ -158,9 +159,9 @@ export default function Navbar() {
               Audit
             </Link>
           )}
-          {hasPermission(perms, "inventory.view_adjustments") && (
-            <Link href="/adjustments" className="block navbar-link" onClick={() => setMobileMenuOpen(false)}>
-              Adjustments
+          {hasPermission(perms, "inventory.view_orders") && (
+            <Link href="/orders" className="block navbar-link" onClick={() => setMobileMenuOpen(false)}>
+              Orders
             </Link>
           )}
           {hasPermission(perms, "inventory.issue_view") && (

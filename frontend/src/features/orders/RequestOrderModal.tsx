@@ -10,7 +10,7 @@ interface Props {
   onSuccess: () => void;
 }
 
-export default function RequestAdjustmentModal({
+export default function RequestOrderModal({
   onClose,
   onSuccess,
 }: Props) {
@@ -44,7 +44,7 @@ export default function RequestAdjustmentModal({
     setError("");
 
     try {
-      await apiFetchClient("/inventory/adjustments/request", {
+      await apiFetchClient("/inventory/orders/request", {
         method: "POST",
         body: JSON.stringify({
           product_id: productId,
@@ -66,7 +66,7 @@ export default function RequestAdjustmentModal({
   return (
     <div className="fixed inset-0 z-40 modal-backdrop flex items-center justify-center px-4">
       <div className="modal-panel bg-white w-full max-w-md p-5 space-y-4">
-        <h2 className="font-semibold">Request Inventory Adjustment</h2>
+        <h2 className="font-semibold">Request Inventory Order</h2>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 
@@ -85,7 +85,7 @@ export default function RequestAdjustmentModal({
         <input
           type="number"
           className="border p-2 w-full rounded"
-          placeholder="Adjustment (+ / -)"
+          placeholder="Order (+ / -)"
           value={delta || ""}
           onChange={(e) => setDelta(Number(e.target.value))}
         />

@@ -19,10 +19,12 @@ urlpatterns = [
     path("inventory/issues/<uuid:issue_id>/pass/pdf", report_views.issue_pass_pdf),
 
 
-    path("inventory/adjustments", views.adjustment_list),
-    path("inventory/adjustments/request", views.request_adjustment),
-    path("inventory/adjustments/<uuid:pk>/approve", views.approve_adjustment),
-    path("inventory/adjustments/<uuid:pk>/reject", views.reject_adjustment),
+    path("inventory/orders", views.order_list),
+    path("inventory/orders/request", views.request_order),
+    path("inventory/orders/<uuid:pk>/approve", views.approve_order),
+    path("inventory/orders/<uuid:pk>/reject", views.reject_order),
+    path("inventory/orders/<uuid:order_id>/po/pdf", report_views.purchase_order_pdf),
+
     
     path("products", views.product_list_create),
     path("products/<uuid:pk>", views.product_update_delete),
@@ -43,5 +45,5 @@ urlpatterns = [
     path("reports/valuation", views.inventory_valuation_report),
     path("reports/low-stock", views.low_stock_report),
     path("reports/audit", views.audit_report),
-    path("reports/adjustments", views.adjustment_report),
+    path("reports/orders", views.order_report),
 ]

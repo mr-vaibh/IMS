@@ -8,13 +8,13 @@ const statusStyles: Record<string, string> = {
   REJECTED: "bg-red-100 text-red-700",
 };
 
-export default function AdjustmentTable({
-  adjustments,
+export default function OrderTable({
+  orders,
 }: {
-  adjustments: any[];
+  orders: any[];
 }) {
   async function act(id: string, action: "approve" | "reject") {
-    await apiFetchClient(`/inventory/adjustments/${id}/${action}`, {
+    await apiFetchClient(`/inventory/orders/${id}/${action}`, {
       method: "POST",
     });
     window.location.reload();
@@ -34,14 +34,14 @@ export default function AdjustmentTable({
       </thead>
 
       <tbody>
-        {adjustments.length === 0 ? (
+        {orders.length === 0 ? (
           <tr>
             <td colSpan={6} className="p-4 text-center text-gray-500">
               No records found
             </td>
           </tr>
         ) : (
-          adjustments.map((a) => (
+          orders.map((a) => (
             <tr key={a.id} className="border-t">
               <td className="p-2">{a.product_name}</td>
               <td className="p-2">{a.warehouse_name}</td>
@@ -83,6 +83,20 @@ export default function AdjustmentTable({
                       Reject
                     </button>
                   </div>
+                )}
+
+                {a.status === "APPROVED" && (
+                  <button
+                    className="btn-primary"
+                    onClick={() =>
+                      window.open(
+                        `/api/inventory/orders/${a.id}/po/pdf`,
+                        "_blank"
+                      )
+                    }
+                  >
+                    Download PO
+                  </button>
                 )}
               </td>
             </tr>

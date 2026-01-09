@@ -6,7 +6,7 @@ import ExportCSV from "./ExportCSV";
 const typeStyles: Record<string, string> = {
   STOCK_IN: "bg-green-100 text-green-700",
   STOCK_OUT: "bg-red-100 text-red-700",
-  ADJUSTMENT: "bg-yellow-100 text-yellow-700",
+  ORDER: "bg-yellow-100 text-yellow-700",
   TRANSFER_IN: "bg-blue-100 text-blue-700",
   TRANSFER_OUT: "bg-purple-100 text-purple-700",
 };

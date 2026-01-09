@@ -1,5 +1,5 @@
 # backend/reports/services.py
-from inventory.models import InventoryStock, InventoryLedger, InventoryAdjustment
+from inventory.models import InventoryStock, InventoryLedger, InventoryOrder
 from django.utils.dateparse import parse_date
 
 from django.db.models import F, DecimalField, ExpressionWrapper
@@ -97,8 +97,8 @@ def get_audit_report(filters: dict):
     )
 
 
-def get_adjustment_report(filters: dict):
-    qs = InventoryAdjustment.objects.select_related(
+def get_order_report(filters: dict):
+    qs = InventoryOrder.objects.select_related(
         "product",
         "warehouse",
     ).order_by("-created_at")

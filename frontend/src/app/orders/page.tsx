@@ -2,15 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { apiFetchClient } from "@/lib/api.client";
-import AdjustmentTable from "@/features/adjustments/AdjustmentTable";
-import RequestAdjustmentModal from "@/features/adjustments/RequestAdjustmentModal";
+import OrderTable from "@/features/orders/OrderTable";
+import RequestOrderModal from "@/features/orders/RequestOrderModal";
 
-export default function AdjustmentsPage() {
+export default function OrdersPage() {
   const [items, setItems] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
 
   function load() {
-    apiFetchClient("/inventory/adjustments")
+    apiFetchClient("/inventory/orders")
       .then((res) => setItems(res.items ?? []))
       .catch(() => setItems([]));
   }
@@ -21,21 +21,21 @@ export default function AdjustmentsPage() {
     <div className="p-6 space-y-4">
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-semibold">
-          Inventory Adjustments
+          Inventory Orders
         </h1>
 
         <button
           onClick={() => setShowModal(true)}
           className="btn-ghost border px-3 py-1"
         >
-          Request Adjustment
+          Request Order
         </button>
       </div>
 
-      <AdjustmentTable adjustments={items} />
+      <OrderTable orders={items} />
 
       {showModal && (
-        <RequestAdjustmentModal
+        <RequestOrderModal
           onClose={() => setShowModal(false)}
           onSuccess={load}
         />

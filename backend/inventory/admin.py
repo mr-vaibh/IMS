@@ -2,7 +2,7 @@ from django.contrib import admin
 from inventory.models import (
     InventoryStock,
     InventoryLedger,
-    InventoryAdjustment,
+    InventoryOrder,
     InventoryIssue,
 )
 
@@ -36,8 +36,8 @@ class InventoryLedgerAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
-@admin.register(InventoryAdjustment)
-class InventoryAdjustmentAdmin(admin.ModelAdmin):
+@admin.register(InventoryOrder)
+class InventoryOrderAdmin(admin.ModelAdmin):
     list_display = (
         "product",
         "warehouse",

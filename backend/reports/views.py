@@ -7,10 +7,10 @@ from weasyprint import HTML
 from rbac.services import user_has_permission
 from django.utils.dateparse import parse_date
 
-from .services import get_stock_report_data, get_inventory_valuation, get_low_stock_report, get_audit_report, get_adjustment_report
+from .services import get_stock_report_data, get_inventory_valuation, get_low_stock_report, get_audit_report, get_order_report
 from .utils import get_signature_block
 
-from inventory.models import InventoryLedger, InventoryIssue
+from inventory.models import InventoryLedger, InventoryIssue, InventoryOrder
 from django.http import HttpResponseBadRequest
 
 
@@ -183,7 +183,7 @@ def audit_report_pdf(request):
 
 
 @login_required
-def adjustment_report_pdf(request):
+def order_report_pdf(request):
     filters = {
         "start_date": request.GET.get("start_date"),
         "end_date": request.GET.get("end_date"),
@@ -192,7 +192,7 @@ def adjustment_report_pdf(request):
         "status": request.GET.get("status"),
     }
 
-    rows = get_adjustment_report(filters)
+    rows = get_order_report(filters)
 
     profile = request.user.userprofile
 
@@ -205,15 +205,49 @@ def adjustment_report_pdf(request):
     }
 
     html = render_to_string(
-        "reports/adjustment_report.html",
+        "reports/order_report.html",
         context,
     )
 
     pdf = HTML(string=html).write_pdf()
 
     response = HttpResponse(pdf, content_type="application/pdf")
-    response["Content-Disposition"] = "inline; filename=adjustment_report.pdf"
+    response["Content-Disposition"] = "inline; filename=order_report.pdf"
     return response
+
+
+@login_required
+def purchase_order_pdf(request, order_id):
+    order = InventoryOrder.objects.select_related(
+        "product",
+        "warehouse",
+        "approved_by",
+        "requested_by"
+    ).get(id=order_id)
+
+    if order.status != InventoryOrder.STATUS_APPROVED:
+        return HttpResponseBadRequest("Order not approved")
+    
+    profile = request.user.userprofile
+
+    context = {
+        "company": profile.company.name if profile.company else "—",
+        "generated_at": timezone.now(),
+        "order": order,
+        "signature": get_signature_block(profile),
+    }
+
+    html = render_to_string(
+        "reports/purchase_order.html",
+        context,
+    )
+
+    pdf = HTML(string=html).write_pdf()
+
+    response = HttpResponse(pdf, content_type="application/pdf")
+    response["Content-Disposition"] = "inline; filename=purchase_order.pdf"
+    return response
+
 
 @login_required
 def issue_pass_pdf(request, issue_id):
@@ -242,4 +276,7 @@ def issue_pass_pdf(request, issue_id):
     )
 
     pdf = HTML(string=html).write_pdf()
-    return HttpResponse(pdf, content_type="application/pdf")
+    response = HttpResponse(pdf, content_type="application/pdf")
+    response["Content-Disposition"] = "inline; filename=issue_pass.pdf"
+
+    return response

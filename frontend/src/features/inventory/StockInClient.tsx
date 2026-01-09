@@ -77,7 +77,7 @@ export default function StockInClient() {
   return (
     <div className="card p-6 max-w-md space-y-4">
       <div className="flex flex-col items-center justify-between">
-        <h1 className="text-2xl font-semibold">Stock Manager</h1>
+        <h1 className="text-2xl font-semibold">Stock Inventory Manager</h1>
         {company && (
           <div className="text-sm text-muted">
             <span className="font-bold">{company.company_name}</span>
