@@ -10,6 +10,11 @@ import uuid
 from datetime import datetime, timezone
 import threading
 import time
+from dotenv import load_dotenv
+
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
 
 # ------------------------
 # LICENSE CONFIGURATION
@@ -17,6 +22,7 @@ import time
 _SECRET = "Allorasoft Pvt. Ltd."  # same as used to generate licenses
 _LICENSE_PATH = Path(__file__).parent / "license.lic"
 _CHECK_INTERVAL = 60  # seconds, how often to ping
+
 
 def _machine_id():
     return os.getenv("LICENSE_MACHINE_ID") or hex(uuid.getnode()).lower()
