@@ -1,13 +1,15 @@
 from uuid import uuid4
+from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import ValidationError
+from django.db import transaction
 
 
 import django.utils.timezone as timezone
 
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseBadRequest
 from django.utils.dateparse import parse_date
 from api.utils import paginate
 from django.db.models import Q
@@ -193,6 +195,7 @@ def inventory_list(request):
                 "product_name": s.product.name,
                 "warehouse_id": s.warehouse.id,
                 "warehouse_name": s.warehouse.name,
+                "warehouse_deleted_at": s.warehouse.deleted_at,
                 "supplier_id": s.product.supplier.id if s.product.supplier else None,
                 "supplier_name": s.product.supplier.name if s.product.supplier else None,
                 "quantity": s.quantity,
@@ -346,6 +349,7 @@ def warehouse_list_create(request):
                 "id": w.id,
                 "name": w.name,
                 "code": w.code,
+                "deleted_at": w.deleted_at,
             }
             for w in qs
         ])
@@ -722,6 +726,92 @@ def stock_in(request):
     )
 
     return Response({"message": "ok", "stock_id": str(stock.id), "ledger_id": str(ledger.id)})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def stock_in_order(request, order_id):
+    """
+    Receive an approved order: update stock, mark order as RECEIVED, and log audit.
+    """
+    if request.method != "POST":
+        return HttpResponseBadRequest("Invalid method")
+
+    order = get_object_or_404(
+        InventoryOrder.objects.select_related("warehouse").prefetch_related("items__product"),
+        id=order_id
+    )
+
+    if order.status != InventoryOrder.STATUS_APPROVED:
+        return HttpResponseBadRequest("Only approved orders can be received")
+
+    with transaction.atomic():
+        # Update inventory stock for each item
+        for item in order.items.all():
+            stock, created = InventoryStock.objects.select_for_update().get_or_create(
+                product=item.product,
+                warehouse=order.warehouse,
+                defaults={"quantity": 0, "version": 0},
+            )
+            old_stock = {
+                "quantity": stock.quantity,
+                "version": stock.version,
+            }
+
+            stock.quantity += item.quantity
+            stock.version += 1
+            stock.save()
+
+            # Log ledger entry
+            from inventory.models import InventoryLedger
+            InventoryLedger.objects.create(
+                product=item.product,
+                warehouse=order.warehouse,
+                change=item.quantity,
+                balance_after=stock.quantity,
+                reference_type="ORDER_STOCK_IN",
+                reference_id=order.id,
+                reason=f"Received from order {order.id}",
+                created_by=request.user,
+            )
+
+            # Audit log for stock update
+            AuditLogger.log(
+                entity="inventory_stock",
+                entity_id=stock.id,
+                action=AuditAction.UPDATE,
+                actor=request.user,
+                old_data=old_stock,
+                new_data={"quantity": stock.quantity, "version": stock.version},
+            )
+
+        # Update order status
+        old_order = {
+            "status": order.status,
+            "received_by": None,
+            "received_at": None,
+        }
+
+        order.status = InventoryOrder.STATUS_RECEIVED
+        order.received_by = request.user
+        order.received_at = timezone.now()
+        order.save()
+
+        # Audit log for order status change
+        AuditLogger.log(
+            entity="inventory_order",
+            entity_id=order.id,
+            action=AuditAction.UPDATE,
+            actor=request.user,
+            old_data=old_order,
+            new_data={
+                "status": order.status,
+                "received_by": request.user.username,
+                "received_at": order.received_at.isoformat(),
+            },
+        )
+
+    return JsonResponse({"success": True, "status": order.status})
 
 
 @api_view(["POST"])

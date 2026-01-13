@@ -5,84 +5,103 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      font-size: 10.5px;
+      font-size: 11px;
       color: #000;
       margin: 10mm;
+      background: #fff;
     }
 
     .pass {
       border: 1px solid #000;
-      padding: 12px;      /* reduced */
-    }
-
-    .divider {
-      border-top: 2px dashed #000;
-      margin: 16px 0;     /* reduced */
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
     .header {
       text-align: center;
-      margin-bottom: 8px; /* reduced */
+      margin-bottom: 12px;
     }
 
     .company-name {
-      font-size: 15px;    /* reduced */
+      font-size: 16px;
       font-weight: bold;
-      letter-spacing: 0.4px;
-    }
-
-    .subtitle {
-      font-size: 10px;
-      margin-top: 2px;
-      color: #444;
+      letter-spacing: 0.5px;
     }
 
     .title {
-      margin-top: 6px;
-      font-size: 13px;
+      font-size: 14px;
       font-weight: bold;
+      margin-top: 4px;
       text-decoration: underline;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 8px;   /* reduced */
+    .section {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
     }
 
-    td, th {
-      border: 1px solid #000;
-      padding: 5px;      /* reduced */
-      vertical-align: top;
+    .section .box {
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 8px 10px;
+      width: 48%;
+      background: #f9f9f9;
     }
 
-    .label {
-      width: 30%;
+    .box h4 {
+      margin: 0 0 6px 0;
+      font-size: 12px;
       font-weight: bold;
-      background: #fafafa;
+      color: #333;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 2px;
     }
 
-    .value {
-      width: 70%;
+    .box p {
+      margin: 4px 0;
+      font-size: 11px;
+    }
+
+    .notes {
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: #fff4e5;
+      padding: 8px 10px;
+      margin-bottom: 12px;
+    }
+
+    .notes h4 {
+      margin: 0 0 4px 0;
+      font-size: 12px;
+      font-weight: bold;
+      color: #a85c00;
     }
 
     .signature {
-      margin-top: 28px;  /* reduced */
       text-align: right;
+      margin-top: 40px;
     }
 
     .signature-line {
-      width: 180px;      /* reduced */
+      width: 200px;
       border-top: 1px solid #000;
       margin-left: auto;
       margin-bottom: 4px;
     }
 
     .footer {
-      margin-top: 14px;  /* reduced */
+      margin-top: 14px;
       font-size: 9px;
-      color: #444;
+      color: #666;
       text-align: center;
+    }
+
+    .divider {
+      border-top: 2px dashed #000;
+      margin: 16px 0;
     }
 
     @media print {
@@ -95,7 +114,6 @@
     }
   </style>
 </head>
-
 <body>
 
 {% for copy in "12" %}
@@ -106,48 +124,38 @@
     <div class="title">PRODUCT ISSUE PASS</div>
   </div>
 
-  <table>
-    <tr>
-      <td class="label">Issue ID</td>
-      <td class="value">{{ issue.id }}</td>
-    </tr>
-    <tr>
-      <td class="label">Product</td>
-      <td class="value">{{ issue.product.name }}</td>
-    </tr>
-    <tr>
-      <td class="label">Warehouse</td>
-      <td class="value">{{ issue.warehouse.name }}</td>
-    </tr>
-    <tr>
-      <td class="label">Quantity Issued</td>
-      <td class="value">{{ issue.quantity }} {{ issue.product.unit }}</td>
-    </tr>
-    <tr>
-      <td class="label">Issued For</td>
-      <td class="value">{{ issue.issue_type }}</td>
-    </tr>
-    <tr>
-      <td class="label">Additional Notes</td>
-      <td class="value">{{ issue.notes|default:"N/A" }}</td>
-    </tr>
-    <tr>
-      <td class="label">Approved By</td>
-      <td class="value">
-        {{ issue.approved_by.get_full_name|default:issue.approved_by.username }}
-      </td>
-    </tr>
-    <tr>
-      <td class="label">Approved At</td>
-      <td class="value">{{ issue.approved_at|date:"d.m.Y H:i" }}</td>
-    </tr>
-  </table>
+  <!-- Issue & Product Info -->
+  <div class="section">
+    <div class="box">
+      <h4>Issue Details</h4>
+      <p><strong>Issue ID:</strong> {{ issue.id }}</p>
+      <p><strong>Product:</strong> {{ issue.product.name }}</p>
+      <p><strong>Quantity:</strong> {{ issue.quantity }} {{ issue.product.unit }}</p>
+      <p><strong>Issued For:</strong> {{ issue.issue_type }}</p>
+    </div>
+    <div class="box">
+      <h4>Warehouse Info</h4>
+      <p><strong>Warehouse:</strong> {{ issue.warehouse.name }}</p>
+      <p><strong>Requested By:</strong> {{ issue.requested_by.get_full_name|default:issue.requested_by.username }}</p>
+      <p><strong>Requested At:</strong> {{ issue.created_at|date:"d.m.Y H:i" }}</p>
+      <p><strong>Approved By:</strong> {{ issue.approved_by.get_full_name|default:issue.approved_by.username }}</p>
+      <p><strong>Approved At:</strong> {{ issue.approved_at|date:"d.m.Y H:i" }}</p>
+    </div>
+  </div>
 
+  <!-- Additional Notes -->
+  <div class="notes">
+    <h4>Additional Notes</h4>
+    <p>{{ issue.notes|default:"N/A" }}</p>
+  </div>
+
+  <!-- Signature -->
   <div class="signature">
     <div class="signature-line"></div>
     <div>Authorised Signature</div>
   </div>
 
+  <!-- Footer -->
   <div class="footer">
     Generated on {{ generated_at|date:"d.m.Y H:i" }}<br/>
     This document authorizes inventory movement from the warehouse.
@@ -156,7 +164,7 @@
 </div>
 
 {% if not forloop.last %}
-  <div class="divider"></div>
+<div class="divider"></div>
 {% endif %}
 {% endfor %}
 

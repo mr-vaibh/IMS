@@ -24,6 +24,9 @@ urlpatterns = [
     path("inventory/orders/<uuid:pk>/approve", views.approve_order),
     path("inventory/orders/<uuid:pk>/reject", views.reject_order),
     path("inventory/orders/<uuid:order_id>/po/pdf", report_views.purchase_order_pdf),
+    path("inventory/orders/<uuid:order_id>/stock-in", views.stock_in_order),
+    path("inventory/orders/<uuid:order_id>/received/pdf", report_views.received_order_pdf, name="received_order_pdf"),
+
 
     
     path("products", views.product_list_create),

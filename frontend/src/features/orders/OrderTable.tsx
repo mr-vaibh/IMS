@@ -8,6 +8,7 @@ const statusStyles: Record<string, string> = {
   PENDING: "bg-yellow-100 text-yellow-700",
   APPROVED: "bg-green-100 text-green-700",
   REJECTED: "bg-red-100 text-red-700",
+  RECEIVED: "bg-blue-100 text-blue-700",
 };
 
 type OrderItem = {
@@ -32,6 +33,7 @@ type Order = {
 
 export default function OrderTable({ orders }: { orders: Order[] }) {
   const [openItems, setOpenItems] = useState<OrderItem[] | null>(null);
+  const [loadingStockIn, setLoadingStockIn] = useState<string | null>(null);
 
   async function act(id: string, action: "approve" | "reject") {
     try {
@@ -47,6 +49,28 @@ export default function OrderTable({ orders }: { orders: Order[] }) {
       } else {
         toast.error("Something went wrong");
       }
+    }
+  }
+
+  async function stockInOrder(orderId: string) {
+    try {
+      setLoadingStockIn(orderId);
+      const res = await apiFetchClient(
+        `/inventory/orders/${orderId}/stock-in`,
+        {
+          method: "POST",
+        }
+      );
+      toast.success("Stocked in successfully!");
+      window.location.reload();
+    } catch (err) {
+      if (err instanceof ApiError) {
+        toast.error(err.message);
+      } else {
+        toast.error("Failed to stock in order");
+      }
+    } finally {
+      setLoadingStockIn(null);
     }
   }
 
@@ -123,17 +147,42 @@ export default function OrderTable({ orders }: { orders: Order[] }) {
                   )}
 
                   {a.status === "APPROVED" && (
-                    <button
-                      className="btn-primary"
-                      onClick={() =>
-                        window.open(
-                          `/api/inventory/orders/${a.id}/po/pdf`,
-                          "_blank"
-                        )
-                      }
-                    >
-                      Download PO
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        className="btn-primary"
+                        onClick={() =>
+                          window.open(
+                            `/api/inventory/orders/${a.id}/po/pdf`,
+                            "_blank"
+                          )
+                        }
+                      >
+                        Download PO
+                      </button>
+                      <button
+                        className="btn-success"
+                        disabled={loadingStockIn === a.id}
+                        onClick={() => stockInOrder(a.id)}
+                      >
+                        {loadingStockIn === a.id ? "Stocking..." : "Stock In"}
+                      </button>
+                    </div>
+                  )}
+
+                  {a.status === "RECEIVED" && (
+                    <div className="flex gap-2">
+                      <button
+                        className="border rounded p-2"
+                        onClick={() =>
+                          window.open(
+                            `/api/inventory/orders/${a.id}/received/pdf`,
+                            "_blank"
+                          )
+                        }
+                      >
+                        Download Received Slip
+                      </button>
+                    </div>
                   )}
                 </td>
               </tr>
@@ -142,7 +191,6 @@ export default function OrderTable({ orders }: { orders: Order[] }) {
         </tbody>
       </table>
 
-      {/* PRODUCT ITEMS MODAL */}
       {/* PRODUCT ITEMS MODAL */}
       {openItems && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">

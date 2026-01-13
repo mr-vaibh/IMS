@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { InventoryRow } from "@/types/inventory";
 import InventoryActions from "./InventoryActions";
 import {
@@ -18,6 +18,7 @@ import {
 interface Warehouse {
   id: string;
   name: string;
+  deleted_at?: string | null;
 }
 
 interface InventoryTableProps {
@@ -36,12 +37,27 @@ export default function InventoryTable({
     pageIndex: 0,
     pageSize: 10,
   });
+  const [showDeleted, setShowDeleted] = useState(false);
 
   // Build unique suppliers list for filter dropdown
   const suppliers = useMemo(() => {
     const set = new Set(rows.map((r) => r.supplier_name).filter(Boolean));
     return Array.from(set);
   }, [rows]);
+
+  // Filter rows based on showDeleted checkbox
+  const filteredRows = useMemo(() => {
+    if (!showDeleted) {
+      // show only NOT deleted rows
+      return rows.filter((row) => !row.warehouse_deleted_at);
+    }
+    // show all rows
+    return rows;
+  }, [rows, showDeleted]);
+
+  useEffect(() => {
+    console.log("Filtered rows", filteredRows);
+  }, [filteredRows]);
 
   const columns = useMemo<ColumnDef<InventoryRow>[]>(
     () => [
@@ -69,23 +85,23 @@ export default function InventoryTable({
         },
       },
       {
-  header: "Qty",
-  accessorKey: "quantity",
-  cell: (info) => {
-    const quantity = info.getValue<number>();
-    const unit = info.row.original.unit; // Access unit from original row data
-    return `${quantity} ${unit || ""}`.trim();
-  },
-  meta: { align: "right" },
-  filterFn: (row, id, value) => {
-    const rowValue = row.getValue<number>(id);
-    const [operator, num] = value;
-    if (operator === "gt") return rowValue > num;
-    if (operator === "lt") return rowValue < num;
-    if (operator === "eq") return rowValue === num;
-    return true;
-  },
-},
+        header: "Qty",
+        accessorKey: "quantity",
+        cell: (info) => {
+          const quantity = info.getValue<number>();
+          const unit = info.row.original.unit; // Access unit from original row data
+          return `${quantity} ${unit || ""}`.trim();
+        },
+        meta: { align: "right" },
+        filterFn: (row, id, value) => {
+          const rowValue = row.getValue<number>(id);
+          const [operator, num] = value;
+          if (operator === "gt") return rowValue > num;
+          if (operator === "lt") return rowValue < num;
+          if (operator === "eq") return rowValue === num;
+          return true;
+        },
+      },
       {
         header: "Actions",
         id: "actions",
@@ -102,7 +118,7 @@ export default function InventoryTable({
   );
 
   const table = useReactTable({
-    data: rows,
+    data: filteredRows,
     columns,
     state: {
       globalFilter,
@@ -118,7 +134,7 @@ export default function InventoryTable({
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     globalFilterFn: "includesString",
-    pageCount: Math.ceil(rows.length / pagination.pageSize),
+    pageCount: Math.ceil(filteredRows.length / pagination.pageSize),
   });
 
   // Add this function inside InventoryTable component
@@ -126,19 +142,14 @@ export default function InventoryTable({
     const rowsToExport = table.getFilteredRowModel().rows;
     if (!rowsToExport.length) return;
 
-    const exportableColumns = columns.filter(
-      (col) => col.id !== "actions"
-    );
+    const exportableColumns = columns.filter((col) => col.id !== "actions");
 
-    const headers = exportableColumns.map(
-      (col) => col.header as string
-    );
+    const headers = exportableColumns.map((col) => col.header as string);
 
     const csvRows = rowsToExport.map((row) =>
       exportableColumns
         .map((col) => {
-          const columnId =
-            col.id ?? (col as any).accessorKey; // fallback safety
+          const columnId = col.id ?? (col as any).accessorKey; // fallback safety
           const value = row.getValue(columnId as string);
           return `"${value ?? ""}"`;
         })
@@ -160,8 +171,24 @@ export default function InventoryTable({
 
   return (
     <div className="w-full max-w-full p-2">
-      {/* Title and Global Search */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-2">
+      {/* Show Deleted Checkbox - own row, right-aligned, single line */}
+      <div className="mb-2 flex justify-end text-xs">
+        <div className="flex items-center gap-2 whitespace-nowrap">
+          <input
+            type="checkbox"
+            id="showDeleted"
+            checked={showDeleted}
+            onChange={(e) => setShowDeleted(e.target.checked)}
+            className="cursor-pointer"
+          />
+          <label htmlFor="showDeleted" className="cursor-pointer">
+            Show Deleted
+          </label>
+        </div>
+      </div>
+
+      {/* Search + Export Toolbar */}
+      <div className="flex flex-wrap items-center justify-between mb-3 gap-2">
         <input
           type="text"
           placeholder="Search..."
@@ -169,6 +196,7 @@ export default function InventoryTable({
           onChange={(e) => setGlobalFilter(e.target.value)}
           className="w-full sm:w-48 px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
         />
+
         <button
           onClick={exportCSV}
           className="px-3 py-1 bg-blue-500 text-white rounded-lg text-xs hover:bg-blue-600 transition"

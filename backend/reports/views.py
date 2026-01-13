@@ -320,3 +320,56 @@ def issue_pass_pdf(request, issue_id):
     response["Content-Disposition"] = "inline; filename=issue_pass.pdf"
 
     return response
+
+@login_required
+def received_order_pdf(request, order_id):
+    """
+    Generate a PDF showing which user received an approved order
+    and when (Stock In clicked).
+    """
+    try:
+        order = (
+            InventoryOrder.objects
+            .select_related("warehouse", "received_by", "requested_by", "approved_by")
+            .prefetch_related("items__product")
+            .get(id=order_id)
+        )
+    except InventoryOrder.DoesNotExist:
+        return HttpResponseBadRequest("Order not found")
+
+    if not order.received_at or not order.received_by:
+        return HttpResponseBadRequest("Order has not been received yet")
+
+    profile = request.user.userprofile
+
+    # Build items list for PDF
+    items = [
+        {
+            "name": item.product.name,
+            "sku": item.product.sku,
+            "qty": item.quantity,
+            "unit": item.unit,
+            "rate": item.rate,
+            "amount": item.amount,
+        }
+        for item in order.items.all()
+    ]
+
+    context = {
+        "company": profile.company.name if profile.company else "—",
+        "warehouse": order.warehouse,
+        "order": order,
+        "items": items,
+        "generated_at": timezone.now(),
+        "received_by": order.received_by,
+        "received_at": order.received_at,
+        "signature": get_signature_block(profile),
+    }
+
+    html = render_to_string("reports/received_order.html", context)
+    pdf = HTML(string=html).write_pdf()
+
+    response = HttpResponse(pdf, content_type="application/pdf")
+    response["Content-Disposition"] = f'inline; filename=Received_Order_{order.id}.pdf'
+
+    return response

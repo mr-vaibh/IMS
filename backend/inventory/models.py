@@ -43,11 +43,13 @@ class InventoryOrder(models.Model):
     STATUS_PENDING = "PENDING"
     STATUS_APPROVED = "APPROVED"
     STATUS_REJECTED = "REJECTED"
+    STATUS_RECEIVED = "RECEIVED"
 
     STATUS_CHOICES = [
         (STATUS_PENDING, "Pending"),
         (STATUS_APPROVED, "Approved"),
         (STATUS_REJECTED, "Rejected"),
+        (STATUS_RECEIVED, "Received"),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -66,9 +68,13 @@ class InventoryOrder(models.Model):
     approved_by = models.ForeignKey(
         User, null=True, blank=True, on_delete=models.PROTECT, related_name="approved_orders"
     )
+    received_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.PROTECT, related_name="received_orders"
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     approved_at = models.DateTimeField(null=True, blank=True)
+    received_at = models.DateTimeField(null=True, blank=True)
 
 class InventoryOrderItem(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

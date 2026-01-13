@@ -357,52 +357,30 @@ def request_order_service(
 
 @transaction.atomic
 def approve_order_service(*, order_id, actor):
-    order = InventoryOrder.objects.select_for_update().get(id=order_id)
+    order = (
+        InventoryOrder.objects
+        .select_for_update()
+        .get(id=order_id)
+    )
 
     if order.status != InventoryOrder.STATUS_PENDING:
-        raise ValueError("Already decided")
-
-    for item in order.items.select_related("product"):
-        stock, _ = InventoryStock.objects.select_for_update().get_or_create(
-            product=item.product,
-            warehouse=order.warehouse,
-            defaults={"quantity": 0},
-        )
-
-        if stock.quantity < item.quantity:
-            raise ValueError(
-                f"Insufficient stock for {item.product.name}"
-            )
-
-        old_stock = model_to_dict(stock)
-
-        stock.quantity -= item.quantity
-        stock.version += 1
-        stock.save()
-
-        InventoryLedger.objects.create(
-            product=item.product,
-            warehouse=order.warehouse,
-            change=-item.quantity,
-            balance_after=stock.quantity,
-            reference_type="ORDER",
-            reference_id=order.id,
-            created_by=actor,
-        )
-
-        AuditLogger.log(
-            entity="inventory_stock",
-            entity_id=stock.id,
-            action=AuditAction.UPDATE,
-            actor=actor,
-            old_data=old_stock,
-            new_data=model_to_dict(stock),
-        )
+        raise ValueError("Order already decided")
 
     order.status = InventoryOrder.STATUS_APPROVED
     order.approved_by = actor
     order.approved_at = now()
     order.save()
+
+    AuditLogger.log(
+        entity="inventory_order",
+        entity_id=order.id,
+        action=AuditAction.UPDATE,
+        actor=actor,
+        old_data={"status": "PENDING"},
+        new_data={"status": "APPROVED"},
+    )
+
+    return order
 
 
 

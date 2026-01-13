@@ -39,6 +39,9 @@ class Warehouse(models.Model):
 
     def __str__(self):
         return self.name
+    
+    class Meta:
+        unique_together = ("company", "name")
 
 
 class Supplier(models.Model):
