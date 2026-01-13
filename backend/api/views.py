@@ -143,11 +143,15 @@ def product_list_create(request):
                     "id": p.id,
                     "name": p.name,
                     "sku": p.sku,
+                    "price": str(p.price),          # 🔥 REQUIRED
+                    "unit": p.unit,                 # 🔥 REQUIRED
+                    "description": p.description,   # optional but useful
                 }
                 for p in items
             ],
             "meta": meta,
         })
+
 
     # CREATE
     if not user_has_permission(request.user, "product.manage"):
@@ -734,27 +738,40 @@ def order_list(request):
 
     qs = (
         InventoryOrder.objects
-        .select_related("product", "warehouse")
+        .select_related("warehouse", "requested_by", "approved_by")
+        .prefetch_related("items__product")
         .filter(warehouse__company=company)
         .order_by("-created_at")
     )
 
-    items, meta = paginate(qs, request)
+    orders, meta = paginate(qs, request)
 
     return Response({
         "items": [
             {
-                "id": a.id,
-                "product_name": a.product.name,
-                "warehouse_name": a.warehouse.name,
-                "delta": a.delta,
-                "reason": a.reason,
-                "status": a.status,
-                "requested_by": str(a.requested_by),
-                "approved_by": str(a.approved_by) if a.approved_by else None,
-                "created_at": a.created_at,
+                "id": str(o.id),
+                "warehouse_name": o.warehouse.name,
+                "status": o.status,
+                "created_at": o.created_at,
+                "items": [
+                    {
+                        "id": str(i.id),
+                        "quantity": i.quantity,
+                        "unit": i.unit,
+                        "rate": i.rate,
+                        "amount": i.amount,
+                        "product": {
+                            "id": str(i.product.id),
+                            "name": i.product.name,
+                            "sku": i.product.sku,
+                            "unit": i.product.unit,
+                            "price": i.product.price,
+                        },
+                    }
+                    for i in o.items.all()
+                ],
             }
-            for a in items
+            for o in orders
         ],
         "meta": meta,
     })
@@ -766,19 +783,40 @@ def request_order(request):
     if not user_has_permission(request.user, "inventory.adjust"):
         return Response({"message": "Forbidden"}, status=403)
 
+    warehouse_id = request.data.get("warehouse_id")
+    items = request.data.get("items", [])
+    reason = request.data.get("reason", "")
+
+    if not warehouse_id:
+        return Response(
+            {"message": "warehouse_id is required"},
+            status=400
+        )
+
+    if not items or not isinstance(items, list):
+        return Response(
+            {"message": "items must be a non-empty list"},
+            status=400
+        )
+
     try:
-        adj = request_order_service(
-            product_id=request.data["product_id"],
-            warehouse_id=request.data["warehouse_id"],
-            delta=int(request.data["delta"]),
-            reason=request.data["reason"],
+        order = request_order_service(
+            warehouse_id=warehouse_id,
+            items=items,
+            reason=reason,
             actor=get_actor(request),
         )
     except Exception as e:
-        return Response({"message": str(e)}, status=400)
+        return Response(
+            {"message": str(e)},
+            status=400
+        )
 
     return Response(
-        {"id": adj.id, "status": adj.status},
+        {
+            "id": order.id,
+            "status": order.status,
+        },
         status=201
     )
 

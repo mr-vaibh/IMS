@@ -4,60 +4,113 @@ import { useEffect, useState } from "react";
 import { apiFetchClient } from "@/lib/api.client";
 import ProductSelect from "@/features/products/ProductSelect";
 import WarehouseSelect from "@/features/warehouses/WarehouseSelect";
+import { toast } from "sonner";
+
+type OrderItem = {
+  product_id: string;
+  name: string;
+  unit: string;
+  price: number;
+  qty: number;
+};
+
+type Product = {
+  id: string;
+  name: string;
+  unit: string;
+  price: number | string;
+};
 
 interface Props {
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export default function RequestOrderModal({
-  onClose,
-  onSuccess,
-}: Props) {
+export default function RequestOrderModal({ onClose, onSuccess }: Props) {
   const [products, setProducts] = useState<any[]>([]);
   const [warehouses, setWarehouses] = useState<any[]>([]);
 
-  const [productId, setProductId] = useState("");
   const [warehouseId, setWarehouseId] = useState("");
-  const [delta, setDelta] = useState(0);
   const [reason, setReason] = useState("");
+  const [items, setItems] = useState<OrderItem[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   useEffect(() => {
-    apiFetchClient("/products")
-      .then((res) => setProducts(res.items ?? []))
-      .catch(() => setProducts([]));
-
-    apiFetchClient("/warehouses")
-      .then(setWarehouses)
-      .catch(() => setWarehouses([]));
+    apiFetchClient("/products").then((r) => setProducts(r.items ?? []));
+    apiFetchClient("/warehouses").then(setWarehouses);
   }, []);
 
+  function addProduct() {
+    if (!selectedProduct) return;
+
+    const p = products.find((x) => x.id === selectedProduct);
+    if (!p) return;
+
+    if (items.some((i) => i.product_id === p.id)) {
+      toast.error("Product already added");
+      return;
+    }
+
+    const price = Number(p.price);
+
+    if (Number.isNaN(price)) {
+      toast.error("Invalid product price");
+      return;
+    }
+
+    setItems((prev) => [
+      ...prev,
+      {
+        product_id: p.id,
+        name: p.name,
+        unit: p.unit,
+        price, // ✅ guaranteed number
+        qty: 1,
+      },
+    ]);
+
+    setSelectedProduct("");
+  }
+
+  function updateQty(index: number, qty: number) {
+    if (!Number.isFinite(qty) || qty < 1) return;
+
+    setItems(items.map((i, idx) => (idx === index ? { ...i, qty } : i)));
+  }
+
+  function removeItem(index: number) {
+    setItems(items.filter((_, i) => i !== index));
+  }
+
+  const totalAmount = items.reduce((sum, i) => sum + i.qty * i.price, 0);
+
   async function submit() {
-    if (!productId || !warehouseId || delta === 0 || !reason) {
-      setError("All fields are required. Delta cannot be zero.");
+    if (!warehouseId || !reason || items.length === 0) {
+      toast.error("All fields are required");
       return;
     }
 
     setLoading(true);
-    setError("");
 
     try {
       await apiFetchClient("/inventory/orders/request", {
         method: "POST",
         body: JSON.stringify({
-          product_id: productId,
           warehouse_id: warehouseId,
-          delta,
           reason,
+          items: items.map((i) => ({
+            product_id: i.product_id,
+            quantity: i.qty,
+          })),
         }),
       });
 
-      onSuccess();  
+      toast.success("Order requested");
+      onSuccess();
       onClose();
     } catch (e: any) {
-      setError(e.message);
+      toast.error(e.message);
     } finally {
       setLoading(false);
     }
@@ -65,16 +118,8 @@ export default function RequestOrderModal({
 
   return (
     <div className="fixed inset-0 z-40 modal-backdrop flex items-center justify-center px-4">
-      <div className="modal-panel bg-white w-full max-w-md p-5 space-y-4">
-        <h2 className="font-semibold">Request Inventory Order</h2>
-
-        {error && <p className="text-sm text-red-600">{error}</p>}
-
-        <ProductSelect
-          products={products}
-          value={productId}
-          onChange={setProductId}
-        />
+      <div className="modal-panel bg-white w-full max-w-3xl p-5 space-y-4">
+        <h2 className="font-semibold text-lg">Request Inventory Order</h2>
 
         <WarehouseSelect
           warehouses={warehouses}
@@ -82,13 +127,66 @@ export default function RequestOrderModal({
           onChange={setWarehouseId}
         />
 
-        <input
-          type="number"
-          className="border p-2 w-full rounded"
-          placeholder="Order (+ / -)"
-          value={delta || ""}
-          onChange={(e) => setDelta(Number(e.target.value))}
-        />
+        {/* Add product */}
+        <div className="flex gap-2">
+          <ProductSelect
+            products={products}
+            value={selectedProduct}
+            onChange={setSelectedProduct}
+          />
+          <button className="btn-primary" onClick={addProduct}>
+            Add
+          </button>
+        </div>
+
+        {/* Products table */}
+        <table className="table text-sm">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Unit</th>
+              <th className="w-24">Qty</th>
+              <th>Rate</th>
+              <th>Amount</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((i, idx) => (
+              <tr key={i.product_id}>
+                <td>{i.name}</td>
+                <td>{i.unit}</td>
+                <td>
+                  <input
+                    type="number"
+                    min={1}
+                    className="border p-1 w-20"
+                    value={i.qty}
+                    onChange={(e) => updateQty(idx, Number(e.target.value))}
+                  />
+                </td>
+                <td>{i.price.toFixed(2)}</td>
+                <td>{(i.qty * i.price).toFixed(2)}</td>
+                <td>
+                  <button
+                    className="text-red-600"
+                    onClick={() => removeItem(idx)}
+                  >
+                    ✕
+                  </button>
+                </td>
+              </tr>
+            ))}
+
+            {items.length === 0 && (
+              <tr>
+                <td colSpan={6} className="text-center text-gray-500 p-4">
+                  No products added
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
 
         <textarea
           className="border p-2 w-full rounded"
@@ -97,18 +195,18 @@ export default function RequestOrderModal({
           onChange={(e) => setReason(e.target.value)}
         />
 
-        <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="btn-ghost">
-            Cancel
-          </button>
+        {/* Footer */}
+        <div className="flex justify-between items-center pt-2">
+          <div className="font-medium">Total: ₹ {totalAmount.toFixed(2)}</div>
 
-          <button
-            onClick={submit}
-            disabled={loading}
-            className={`btn-primary ${loading ? 'opacity-60' : ''}`}
-          >
-            {loading ? "Submitting…" : "Submit"}
-          </button>
+          <div className="flex gap-2">
+            <button onClick={onClose} className="btn-ghost">
+              Cancel
+            </button>
+            <button onClick={submit} disabled={loading} className="btn-primary">
+              {loading ? "Submitting…" : "Submit Order"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -219,48 +219,62 @@ def order_report_pdf(request):
 @login_required
 def purchase_order_pdf(request, order_id):
     from decimal import Decimal
-    
-    order = InventoryOrder.objects.select_related(
-        "product",
-        "product__supplier",
-        "warehouse",
-        "approved_by",
-    ).get(id=order_id)
+    from django.http import HttpResponseBadRequest
+    from django.utils import timezone
 
-    if order.status != InventoryIssue.STATUS_APPROVED:
+    order = (
+        InventoryOrder.objects
+        .select_related("warehouse", "approved_by", "requested_by")
+        .prefetch_related("items__product__supplier")
+        .get(id=order_id)
+    )
+
+    if order.status != InventoryOrder.STATUS_APPROVED:
         return HttpResponseBadRequest("PO available only for approved orders")
 
     profile = request.user.userprofile
-    product = order.product
-    supplier = order.product.supplier
 
-    quantity = abs(order.delta)
-    rate = product.price
-    amount = quantity * rate
+    # ---- Build PO items ----
+    items = []
+    subtotal = Decimal("0.00")
 
+    for item in order.items.all():
+        product = item.product
+        qty = Decimal(item.quantity)
+        rate = product.price
+        amount = (qty * rate).quantize(Decimal("0.01"))
+
+        subtotal += amount
+
+        items.append({
+            "name": product.name,
+            "description": product.description,
+            "qty": qty,
+            "rate": rate,
+            "amount": amount,
+            "unit": product.unit,
+        })
+
+    # ---- Tax calculation ----
     TAX_PERCENT = Decimal("18")
     TAX_RATE = TAX_PERCENT / Decimal("100")
 
-    tax_amount = (amount * TAX_RATE).quantize(Decimal("0.01"))
-    total = (amount + tax_amount).quantize(Decimal("0.01"))
+    tax_amount = (subtotal * TAX_RATE).quantize(Decimal("0.01"))
+    total = (subtotal + tax_amount).quantize(Decimal("0.01"))
+
+    # ---- Supplier (assumption: same supplier) ----
+    supplier = (
+        items and order.items.first().product.supplier
+    )
 
     context = {
         "company": profile.company,
         "warehouse": order.warehouse,
         "supplier": supplier,
         "order": order,
-        "items": [
-            {
-                "name": product.name,
-                "description": product.description,
-                "qty": quantity,
-                "rate": rate,
-                "amount": amount,
-                "unit": product.unit,
-            }
-        ],
-        "subtotal": amount,
-        "tax_percent": int(TAX_PERCENT),   # for display only
+        "items": items,
+        "subtotal": subtotal,
+        "tax_percent": int(TAX_PERCENT),
         "tax_amount": tax_amount,
         "total": total,
         "generated_at": timezone.now(),

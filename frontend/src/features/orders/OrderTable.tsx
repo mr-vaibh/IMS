@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { toast } from "sonner";
 import { apiFetchClient, ApiError } from "@/lib/api.client";
 
@@ -9,7 +10,29 @@ const statusStyles: Record<string, string> = {
   REJECTED: "bg-red-100 text-red-700",
 };
 
-export default function OrderTable({ orders }: { orders: any[] }) {
+type OrderItem = {
+  product: {
+    name: string;
+    sku: string;
+    unit: string;
+  };
+  quantity: number;
+  unit: string;
+  rate: string;
+  amount: string;
+};
+
+type Order = {
+  id: string;
+  warehouse_name: string;
+  status: string;
+  created_at: string;
+  items: OrderItem[];
+};
+
+export default function OrderTable({ orders }: { orders: Order[] }) {
+  const [openItems, setOpenItems] = useState<OrderItem[] | null>(null);
+
   async function act(id: string, action: "approve" | "reject") {
     try {
       await apiFetchClient(`/inventory/orders/${id}/${action}`, {
@@ -28,88 +51,158 @@ export default function OrderTable({ orders }: { orders: any[] }) {
   }
 
   return (
-    <table className="table text-sm">
-      <thead>
-        <tr>
-          <th className="p-2">Product</th>
-          <th className="p-2">Warehouse</th>
-          <th className="p-2">Delta</th>
-          <th className="p-2">Reason</th>
-          <th className="p-2">Status</th>
-          <th className="p-2">Actions</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        {orders.length === 0 ? (
+    <>
+      <table className="table text-sm">
+        <thead>
           <tr>
-            <td colSpan={6} className="p-4 text-center text-gray-500">
-              No records found
-            </td>
+            <th className="p-2">Product</th>
+            <th className="p-2">Warehouse</th>
+            <th className="p-2">Created</th>
+            <th className="p-2">Status</th>
+            <th className="p-2">Actions</th>
           </tr>
-        ) : (
-          orders.map((a) => (
-            <tr key={a.id} className="border-t">
-              <td className="p-2">{a.product_name}</td>
-              <td className="p-2">{a.warehouse_name}</td>
+        </thead>
 
-              <td
-                className={`p-2 font-medium ${
-                  a.delta > 0 ? "text-green-700" : "text-red-700"
-                }`}
-              >
-                {a.delta > 0 ? "+" : ""}
-                {a.delta}
-              </td>
-
-              <td className="p-2">{a.reason}</td>
-
-              <td className="p-2">
-                <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
-                    statusStyles[a.status] ?? "bg-gray-100 text-gray-700"
-                  }`}
-                >
-                  {a.status}
-                </span>
-              </td>
-
-              <td className="p-2">
-                {a.status === "PENDING" && (
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => act(a.id, "approve")}
-                      className="btn-success text-sm"
-                    >
-                      Approve
-                    </button>
-                    <button
-                      onClick={() => act(a.id, "reject")}
-                      className="btn-danger text-sm"
-                    >
-                      Reject
-                    </button>
-                  </div>
-                )}
-
-                {a.status === "APPROVED" && (
-                  <button
-                    className="btn-primary"
-                    onClick={() =>
-                      window.open(
-                        `/api/inventory/orders/${a.id}/po/pdf`,
-                        "_blank"
-                      )
-                    }
-                  >
-                    Download PO
-                  </button>
-                )}
+        <tbody>
+          {orders.length === 0 ? (
+            <tr>
+              <td colSpan={5} className="p-4 text-center text-gray-500">
+                No records found
               </td>
             </tr>
-          ))
-        )}
-      </tbody>
-    </table>
+          ) : (
+            orders.map((a) => (
+              <tr key={a.id} className="border-t">
+                {/* PRODUCTS */}
+                <td className="p-2">
+                  {a.items.length === 0 ? (
+                    <span className="text-gray-400 italic">No items</span>
+                  ) : (
+                    <button
+                      className="text-blue-600 hover:underline"
+                      onClick={() => setOpenItems(a.items)}
+                    >
+                      {a.items.length} item
+                      {a.items.length > 1 && "s"}
+                    </button>
+                  )}
+                </td>
+
+                <td className="p-2">{a.warehouse_name}</td>
+
+                <td className="p-2 text-gray-600">
+                  {new Date(a.created_at).toLocaleString()}
+                </td>
+
+                <td className="p-2">
+                  <span
+                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                      statusStyles[a.status] ?? "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {a.status}
+                  </span>
+                </td>
+
+                <td className="p-2">
+                  {a.status === "PENDING" && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => act(a.id, "approve")}
+                        className="btn-success text-sm"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => act(a.id, "reject")}
+                        className="btn-danger text-sm"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  )}
+
+                  {a.status === "APPROVED" && (
+                    <button
+                      className="btn-primary"
+                      onClick={() =>
+                        window.open(
+                          `/api/inventory/orders/${a.id}/po/pdf`,
+                          "_blank"
+                        )
+                      }
+                    >
+                      Download PO
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+
+      {/* PRODUCT ITEMS MODAL */}
+      {/* PRODUCT ITEMS MODAL */}
+      {openItems && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg w-full max-w-2xl p-4">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="font-semibold text-sm">Order Items</h3>
+              <button
+                className="text-gray-500 hover:text-black"
+                onClick={() => setOpenItems(null)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <table className="table text-sm">
+              <thead>
+                <tr>
+                  <th className="p-2">Product</th>
+                  <th className="p-2">SKU</th>
+                  <th className="p-2 text-right">Qty</th>
+                  <th className="p-2 text-right">Rate</th>
+                  <th className="p-2 text-right">Amount</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {openItems.map((item, i) => (
+                  <tr key={i} className="border-t">
+                    <td className="p-2">
+                      <div className="font-medium">{item.product.name}</div>
+                      <div className="text-xs text-gray-500">
+                        Unit: {item.unit}
+                      </div>
+                    </td>
+
+                    <td className="p-2 text-gray-600">{item.product.sku}</td>
+
+                    <td className="p-2 text-right">{item.quantity}</td>
+
+                    <td className="p-2 text-right">₹{item.rate}</td>
+
+                    <td className="p-2 text-right font-medium">
+                      ₹{item.amount}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div className="mt-4 flex justify-end">
+              <button
+                className="btn-secondary text-sm"
+                onClick={() => setOpenItems(null)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

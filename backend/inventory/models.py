@@ -52,10 +52,8 @@ class InventoryOrder(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    product = models.ForeignKey(Product, on_delete=models.PROTECT)
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT)
 
-    delta = models.IntegerField()  # + / -
     reason = models.TextField()
 
     status = models.CharField(
@@ -72,6 +70,23 @@ class InventoryOrder(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     approved_at = models.DateTimeField(null=True, blank=True)
 
+class InventoryOrderItem(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    order = models.ForeignKey(
+        "InventoryOrder",
+        related_name="items",
+        on_delete=models.CASCADE,
+    )
+
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField()
+    unit = models.CharField(max_length=20)
+
+    rate = models.DecimalField(max_digits=10, decimal_places=2)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+
+    created_at = models.DateTimeField(auto_now_add=True)
 
 class InventoryIssue(models.Model):
     STATUS_PENDING = "PENDING"

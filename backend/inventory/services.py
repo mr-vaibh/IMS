@@ -7,7 +7,7 @@ from django.forms.models import model_to_dict
 from core.audit.enums import AuditAction
 from core.audit.logger import AuditLogger
 from rbac.services import user_has_permission
-from inventory.models import InventoryStock, InventoryLedger, InventoryOrder, Product, Warehouse, InventoryIssue
+from inventory.models import InventoryStock, InventoryLedger, InventoryOrder, Product, Warehouse, InventoryIssue, InventoryOrderItem
 from users.models import UserProfile
 
 from django.contrib.auth import get_user_model
@@ -302,30 +302,42 @@ def transfer_stock_service(
 @transaction.atomic
 def request_order_service(
     *,
-    product_id,
     warehouse_id,
-    delta,
+    items,
     reason,
     actor,
 ):
-    if not isinstance(actor, User):
-        raise ValueError("actor must be a User instance")
-
-    user = User.objects.get(id=actor.id)
-    if not user_has_permission(user, "inventory.adjust"):
-        raise PermissionError("Not allowed")
-
-
-    if delta == 0:
-        raise ValueError("Delta cannot be zero")
+    if not items:
+        raise ValueError("No items provided")
 
     order = InventoryOrder.objects.create(
-        product_id=product_id,
         warehouse_id=warehouse_id,
-        delta=delta,
         reason=reason,
         requested_by=actor,
     )
+
+    total_items = 0
+
+    for item in items:
+        product = Product.objects.get(id=item["product_id"])
+
+        qty = int(item["quantity"])
+        if qty <= 0:
+            raise ValueError("Quantity must be positive")
+
+        rate = product.price
+        amount = rate * qty
+
+        InventoryOrderItem.objects.create(
+            order=order,
+            product=product,
+            quantity=qty,
+            unit=product.unit,
+            rate=rate,
+            amount=amount,
+        )
+
+        total_items += qty
 
     AuditLogger.log(
         entity="inventory_order",
@@ -333,10 +345,9 @@ def request_order_service(
         action=AuditAction.CREATE,
         actor=actor,
         new_data={
-            "product_id": str(product_id),
             "warehouse_id": str(warehouse_id),
-            "delta": delta,
-            "reason": reason,
+            "items": len(items),
+            "total_quantity": total_items,
         },
     )
 
@@ -345,78 +356,53 @@ def request_order_service(
 
 
 @transaction.atomic
-def approve_order_service(
-    *,
-    order_id,
-    actor,
-):
-    if not isinstance(actor, User):
-        raise ValueError("actor must be a User instance")
+def approve_order_service(*, order_id, actor):
+    order = InventoryOrder.objects.select_for_update().get(id=order_id)
 
-    user = User.objects.get(id=actor.id)
-
-    if not user_has_permission(user, "inventory.approve_order"):
-        raise PermissionError("Not allowed")
-
-    adj = InventoryOrder.objects.select_for_update().get(id=order_id)
-
-    if adj.status != InventoryOrder.STATUS_PENDING:
+    if order.status != InventoryOrder.STATUS_PENDING:
         raise ValueError("Already decided")
 
-    product = adj.product
-    warehouse = adj.warehouse
+    for item in order.items.select_related("product"):
+        stock, _ = InventoryStock.objects.select_for_update().get_or_create(
+            product=item.product,
+            warehouse=order.warehouse,
+            defaults={"quantity": 0},
+        )
 
-    stock, created = InventoryStock.objects.select_for_update().get_or_create(
-        product=product,
-        warehouse=warehouse,
-        defaults={
-            "quantity": 0,
-            "version": 1,
-        },
-    )
+        if stock.quantity < item.quantity:
+            raise ValueError(
+                f"Insufficient stock for {item.product.name}"
+            )
 
-    if adj.delta < 0 and stock.quantity < abs(adj.delta):
-        raise ValueError("Insufficient stock for order")
+        old_stock = model_to_dict(stock)
 
-    old_stock = model_to_dict(stock)
+        stock.quantity -= item.quantity
+        stock.version += 1
+        stock.save()
 
-    stock.quantity += adj.delta
-    stock.version += 1
-    stock.save()
+        InventoryLedger.objects.create(
+            product=item.product,
+            warehouse=order.warehouse,
+            change=-item.quantity,
+            balance_after=stock.quantity,
+            reference_type="ORDER",
+            reference_id=order.id,
+            created_by=actor,
+        )
 
-    InventoryLedger.objects.create(
-        product=product,
-        warehouse=warehouse,
-        change=adj.delta,
-        balance_after=stock.quantity,
-        reference_type="ORDER",
-        reference_id=adj.id,
-        reason=adj.reason,
-        created_by=actor,
-    )
+        AuditLogger.log(
+            entity="inventory_stock",
+            entity_id=stock.id,
+            action=AuditAction.UPDATE,
+            actor=actor,
+            old_data=old_stock,
+            new_data=model_to_dict(stock),
+        )
 
-    adj.status = InventoryOrder.STATUS_APPROVED
-    adj.approved_by = actor
-    adj.approved_at = now()
-    adj.save()
-
-    AuditLogger.log(
-        entity="inventory_stock",
-        entity_id=stock.id,
-        action=AuditAction.UPDATE,
-        actor=actor,
-        old_data=old_stock,
-        new_data=model_to_dict(stock),
-    )
-
-    AuditLogger.log(
-        entity="inventory_order",
-        entity_id=adj.id,
-        action=AuditAction.UPDATE,
-        actor=actor,
-        old_data={"status": "PENDING"},
-        new_data={"status": "APPROVED"},
-    )
+    order.status = InventoryOrder.STATUS_APPROVED
+    order.approved_by = actor
+    order.approved_at = now()
+    order.save()
 
 
 

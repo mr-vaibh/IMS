@@ -3,6 +3,7 @@ from inventory.models import (
     InventoryStock,
     InventoryLedger,
     InventoryOrder,
+    InventoryOrderItem,
     InventoryIssue,
 )
 
@@ -36,25 +37,52 @@ class InventoryLedgerAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
+class InventoryOrderItemInline(admin.TabularInline):
+    model = InventoryOrderItem
+    extra = 0
+    readonly_fields = ("product", "quantity")
+    can_delete = False
+
 @admin.register(InventoryOrder)
 class InventoryOrderAdmin(admin.ModelAdmin):
     list_display = (
-        "product",
+        "id",
         "warehouse",
-        "delta",
         "status",
         "requested_by",
         "approved_by",
         "approved_at",
+        "created_at",
     )
 
     list_filter = ("status", "warehouse")
-    search_fields = ("product__name",)
+    search_fields = (
+        "id",
+        "warehouse__name",
+        "requested_by__username",
+    )
 
     readonly_fields = (
         "requested_by",
         "approved_by",
         "approved_at",
+        "created_at",
+    )
+
+    inlines = [InventoryOrderItemInline]
+
+@admin.register(InventoryOrderItem)
+class InventoryOrderItemAdmin(admin.ModelAdmin):
+    list_display = (
+        "order",
+        "product",
+        "quantity",
+    )
+
+    list_filter = ("product",)
+    search_fields = (
+        "product__name",
+        "order__id",
     )
 
 @admin.register(InventoryIssue)
