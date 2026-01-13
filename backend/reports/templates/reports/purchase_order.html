@@ -20,15 +20,15 @@
 
 <div class="row">
   <div class="col box">
-    <strong>Invoice To</strong><br/>
-    {{ company.name }}<br/>
-    {{ company.address }}
+    <u>Invoice To</u><br/><br>
+    <strong>{{ company.name }}</strong><br/>
+    {{ company.address|default:"" }}
   </div>
 
   <div class="col box">
-    <strong>Consignee (Ship To)</strong><br/>
-    {{ warehouse.name }}<br/>
-    {{ warehouse.location }}
+    <u>Consignee (Ship To)</u><br/><br>
+    <strong>{{ warehouse.name }}</strong><br/>
+    {{ warehouse.location|default:"" }}
   </div>
 </div>
 
@@ -36,10 +36,15 @@
 
 <div class="row">
   <div class="col box">
-    <strong>Supplier</strong><br/>
+  <u>Supplier</u><br/>
     {{ supplier.name }}<br/>
-    {{ supplier.address }}
+    {% if supplier.address %}
+      {{ supplier.address }}
+    {% else %}
+      <br><br>
+    {% endif %}
   </div>
+
 
   <div class="col box">
     <strong>PO No:</strong> {{ order.id }}<br/>

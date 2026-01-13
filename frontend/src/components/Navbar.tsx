@@ -98,6 +98,12 @@ export default function Navbar() {
             </Link>
           )}
 
+          {hasPermission(perms, "company.manage") && (
+            <Link href="/settings" className="navbar-link">
+              Settings
+            </Link>
+          )}
+
         </div>
 
         {/* Mobile Hamburger */}
@@ -172,6 +178,12 @@ export default function Navbar() {
               Audit
             </Link>
           )}
+          {hasPermission(perms, "company.manage") && (
+            <Link href="/settings" className="block navbar-link" onClick={() => setMobileMenuOpen(false)}>
+              Settings
+            </Link>
+          )}
+
 
           <button
             onClick={logout}

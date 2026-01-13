@@ -20,6 +20,7 @@ class Command(BaseCommand):
             "product.manage",
             "warehouse.manage",
             "supplier.manage",
+            "company.manage",
         ]
 
         perm_objs = {}

@@ -47,19 +47,44 @@ def get_actor(request):
 # =======================
 
 
-@api_view(["GET"])
+@api_view(["GET", "PUT"])
 @permission_classes([IsAuthenticated])
 def my_profile(request):
-    profile = request.user.userprofile
+    user = request.user
+    profile = user.userprofile
 
-    return Response({
-        "username": request.user.username,
-        "role": profile.role.name if profile.role else None,
-        "email": request.user.email,
-        "full_name": profile.user.get_full_name(),
-        "company_id": str(profile.company.id) if profile.company else None,
-        "company_name": profile.company.name if profile.company else None,
-    })
+    if request.method == "GET":
+        return Response({
+            "username": user.username,
+            "role": profile.role.name if profile.role else None,
+            "email": user.email,
+            "full_name": user.get_full_name(),
+            "company_id": str(profile.company.id) if profile.company else None,
+            "company_name": profile.company.name if profile.company else None,
+            "phone_number": profile.phone_number,
+        })
+
+    if request.method == "PUT":
+        user.username = request.data.get("username", user.username)
+        profile.phone_number = request.data.get(
+            "phone_number", profile.phone_number
+        )
+
+        user.save()
+        profile.save()
+
+        AuditLogger.log(
+            entity="user_profile",
+            entity_id=profile.id,
+            action=AuditAction.UPDATE,
+            actor=user,
+            new_data={
+                "username": user.username,
+                "phone_number": profile.phone_number,
+            },
+        )
+
+        return Response({"success": True})
 
 
 @api_view(["GET"])
@@ -72,6 +97,66 @@ def my_permissions(request):
         .values_list("permission__code", flat=True)
     )
     return Response(perms)
+
+# ================ Settings Views ==================
+
+@api_view(["PUT"])
+@permission_classes([IsAuthenticated])
+def update_company(request):
+    if not user_has_permission(request.user, "company.manage"):
+        return Response({"message": "Forbidden"}, status=403)
+
+    profile = request.user.userprofile
+    company = profile.company
+
+    if not company:
+        return Response({"message": "No company"}, status=400)
+
+    company.name = request.data.get("name", company.name)
+    company.address = request.data.get("address", company.address)
+    company.save()
+
+    AuditLogger.log(
+        entity="company",
+        entity_id=company.id,
+        action=AuditAction.UPDATE,
+        actor=request.user,
+        new_data={
+            "name": company.name,
+            "address": company.address,
+        },
+    )
+
+    return Response({"success": True})
+
+
+@api_view(["PUT"])
+@permission_classes([IsAuthenticated])
+def update_my_profile(request):
+    user = request.user
+    profile = user.userprofile
+
+    user.username = request.data.get("username", user.username)
+    profile.phone_number = request.data.get(
+        "phone_number", profile.phone_number
+    )
+
+    user.save()
+    profile.save()
+
+    AuditLogger.log(
+        entity="user_profile",
+        entity_id=profile.id,
+        action=AuditAction.UPDATE,
+        actor=user,
+        new_data={
+            "username": user.username,
+            "phone_number": profile.phone_number,
+        },
+    )
+
+    return Response({"success": True})
+
 
 # ================ Inventory Views =================
 
