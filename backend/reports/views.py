@@ -218,37 +218,60 @@ def order_report_pdf(request):
 
 @login_required
 def purchase_order_pdf(request, order_id):
+    from decimal import Decimal
+    
     order = InventoryOrder.objects.select_related(
         "product",
+        "product__supplier",
         "warehouse",
         "approved_by",
-        "requested_by"
     ).get(id=order_id)
 
-    if order.status != InventoryOrder.STATUS_APPROVED:
-        return HttpResponseBadRequest("Order not approved")
+    if order.status != InventoryIssue.STATUS_APPROVED:
+        return HttpResponseBadRequest("PO available only for approved orders")
 
     profile = request.user.userprofile
+    product = order.product
+    supplier = order.product.supplier
 
-    total_price = order.product.price * order.delta
+    quantity = abs(order.delta)
+    rate = product.price
+    amount = quantity * rate
+
+    TAX_PERCENT = Decimal("18")
+    TAX_RATE = TAX_PERCENT / Decimal("100")
+
+    tax_amount = (amount * TAX_RATE).quantize(Decimal("0.01"))
+    total = (amount + tax_amount).quantize(Decimal("0.01"))
 
     context = {
-        "company": profile.company.name if profile.company else "—",
-        "generated_at": timezone.now(),
+        "company": profile.company,
+        "warehouse": order.warehouse,
+        "supplier": supplier,
         "order": order,
-        "total_price": total_price,
+        "items": [
+            {
+                "name": product.name,
+                "description": product.description,
+                "qty": quantity,
+                "rate": rate,
+                "amount": amount,
+                "unit": product.unit,
+            }
+        ],
+        "subtotal": amount,
+        "tax_percent": int(TAX_PERCENT),   # for display only
+        "tax_amount": tax_amount,
+        "total": total,
+        "generated_at": timezone.now(),
         "signature": get_signature_block(profile),
     }
 
-    html = render_to_string(
-        "reports/purchase_order.html",
-        context,
-    )
-
+    html = render_to_string("reports/purchase_order.html", context)
     pdf = HTML(string=html).write_pdf()
 
     response = HttpResponse(pdf, content_type="application/pdf")
-    response["Content-Disposition"] = "inline; filename=purchase_order.pdf"
+    response["Content-Disposition"] = "inline; filename=Purchase_Order.pdf"
     return response
 
 

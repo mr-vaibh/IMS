@@ -38,6 +38,8 @@ services:
     build: ./frontend
     container_name: ims_frontend
     restart: always
+    env_file:
+      - .env  # Use .env file to load environment variables for the backend service
     depends_on:
       - backend
     ports:

@@ -1,6 +1,7 @@
 "use client";
 
-import { apiFetchClient } from "@/lib/api.client";
+import { toast } from "sonner";
+import { apiFetchClient, ApiError } from "@/lib/api.client";
 
 const statusStyles: Record<string, string> = {
   PENDING: "bg-yellow-100 text-yellow-700",
@@ -8,16 +9,22 @@ const statusStyles: Record<string, string> = {
   REJECTED: "bg-red-100 text-red-700",
 };
 
-export default function OrderTable({
-  orders,
-}: {
-  orders: any[];
-}) {
+export default function OrderTable({ orders }: { orders: any[] }) {
   async function act(id: string, action: "approve" | "reject") {
-    await apiFetchClient(`/inventory/orders/${id}/${action}`, {
-      method: "POST",
-    });
-    window.location.reload();
+    try {
+      await apiFetchClient(`/inventory/orders/${id}/${action}`, {
+        method: "POST",
+      });
+
+      toast.success("Order updated successfully");
+      window.location.reload();
+    } catch (err) {
+      if (err instanceof ApiError) {
+        toast.error(err.message);
+      } else {
+        toast.error("Something went wrong");
+      }
+    }
   }
 
   return (
