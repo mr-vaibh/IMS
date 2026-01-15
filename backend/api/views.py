@@ -63,6 +63,7 @@ def my_profile(request):
             "full_name": user.get_full_name(),
             "company_id": str(profile.company.id) if profile.company else None,
             "company_name": profile.company.name if profile.company else None,
+            "company_address": profile.company.address if profile.company else None,
             "phone_number": profile.phone_number,
         })
 
