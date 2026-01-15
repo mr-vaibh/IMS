@@ -368,8 +368,13 @@ export default function InventoryTable({
               table.getRowModel().rows.map((row) => (
                 <tr
                   key={row.id}
+                  title={row.original.warehouse_deleted_at ? "Deleted" : undefined}
                   className={`${
-                    row.original.quantity === 0 ? "bg-red-100" : "bg-white"
+                    row.original.warehouse_deleted_at
+                      ? "bg-gray-200 text-gray-600"
+                      : row.original.quantity === 0
+                      ? "bg-red-100"
+                      : "bg-white"
                   } hover:bg-gray-50`}
                 >
                   {row.getVisibleCells().map((cell) => (
