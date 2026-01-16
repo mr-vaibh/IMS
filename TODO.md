@@ -1,4 +1,3 @@
-- remarks in recieved slip
 - manage permissions for +In/-Out and Stock Inventory Manager
 - create the manage supplier
 - add GST check box in Request Order

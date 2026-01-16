@@ -27,6 +27,7 @@ type Order = {
   id: string;
   warehouse_name: string;
   status: string;
+  reason: string | null;
   created_at: string;
   items: OrderItem[];
 };
@@ -83,6 +84,7 @@ export default function OrderTable({ orders }: { orders: Order[] }) {
             <th className="p-2">Warehouse</th>
             <th className="p-2">Created</th>
             <th className="p-2">Status</th>
+            <th className="p-2">Reason</th>
             <th className="p-2">Actions</th>
           </tr>
         </thead>
@@ -128,6 +130,17 @@ export default function OrderTable({ orders }: { orders: Order[] }) {
                   </span>
                 </td>
 
+                <td className="p-2 text-gray-600 max-w-xs">
+                  {a.reason ? (
+                    <span title={a.reason} className="line-clamp-2">
+                      {a.reason}
+                    </span>
+                  ) : (
+                    <span className="italic text-gray-400">—</span>
+                  )}
+                </td>
+
+
                 <td className="p-2">
                   {a.status === "PENDING" && (
                     <div className="flex gap-2">
@@ -149,7 +162,7 @@ export default function OrderTable({ orders }: { orders: Order[] }) {
                   {a.status === "APPROVED" && (
                     <div className="flex gap-2">
                       <button
-                        className="btn-primary"
+                        className="border rounded p-2"
                         onClick={() =>
                           window.open(
                             `/api/inventory/orders/${a.id}/po/pdf`,
@@ -175,12 +188,23 @@ export default function OrderTable({ orders }: { orders: Order[] }) {
                         className="border rounded p-2"
                         onClick={() =>
                           window.open(
+                            `/api/inventory/orders/${a.id}/po/pdf`,
+                            "_blank"
+                          )
+                        }
+                      >
+                        Download PO
+                      </button>
+                      <button
+                        className="border rounded p-2"
+                        onClick={() =>
+                          window.open(
                             `/api/inventory/orders/${a.id}/received/pdf`,
                             "_blank"
                           )
                         }
                       >
-                        Download Received Slip
+                        Download GRN
                       </button>
                     </div>
                   )}

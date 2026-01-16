@@ -929,6 +929,7 @@ def order_list(request):
                 "warehouse_name": o.warehouse.name,
                 "status": o.status,
                 "created_at": o.created_at,
+                "reason": o.reason,
                 "items": [
                     {
                         "id": str(i.id),

@@ -229,7 +229,7 @@ def purchase_order_pdf(request, order_id):
         .get(id=order_id)
     )
 
-    if order.status != InventoryOrder.STATUS_APPROVED:
+    if order.status != InventoryOrder.STATUS_APPROVED and order.status != InventoryOrder.STATUS_RECEIVED:
         return HttpResponseBadRequest("PO available only for approved orders")
 
     profile = request.user.userprofile

@@ -56,7 +56,7 @@ class InventoryOrder(models.Model):
 
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT)
 
-    reason = models.TextField()
+    reason = models.TextField(blank=True, null=True)
 
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING

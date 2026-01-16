@@ -86,8 +86,8 @@ export default function RequestOrderModal({ onClose, onSuccess }: Props) {
   const totalAmount = items.reduce((sum, i) => sum + i.qty * i.price, 0);
 
   async function submit() {
-    if (!warehouseId || !reason || items.length === 0) {
-      toast.error("All fields are required");
+    if (!warehouseId || items.length === 0) {
+      toast.error("All fields are required except Remark");
       return;
     }
 
@@ -190,7 +190,7 @@ export default function RequestOrderModal({ onClose, onSuccess }: Props) {
 
         <textarea
           className="border p-2 w-full rounded"
-          placeholder="Reason (required)"
+          placeholder="Remark (optional)"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
         />
