@@ -38,7 +38,7 @@ export default function InventoryActions({
         >
           ⇄ Transfer
         </button>
-        <button
+        {/* <button
           onClick={() => setModal("IN")}
           className="btn-primary text-sm"
         >
@@ -50,7 +50,7 @@ export default function InventoryActions({
           className="btn-danger text-sm"
         >
           − Out
-        </button>
+        </button> */}
 
 
 

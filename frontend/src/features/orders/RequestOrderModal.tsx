@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { apiFetchClient } from "@/lib/api.client";
 import ProductSelect from "@/features/products/ProductSelect";
 import WarehouseSelect from "@/features/warehouses/WarehouseSelect";
+import SupplierSelect from "@/features/suppliers/SupplierSelect";
 import { toast } from "sonner";
 
 type OrderItem = {
@@ -29,16 +30,19 @@ interface Props {
 export default function RequestOrderModal({ onClose, onSuccess }: Props) {
   const [products, setProducts] = useState<any[]>([]);
   const [warehouses, setWarehouses] = useState<any[]>([]);
+  const [suppliers, setSuppliers] = useState<any[]>([]);
 
   const [warehouseId, setWarehouseId] = useState("");
+  const [supplierId, setSupplierId] = useState("");
   const [reason, setReason] = useState("");
   const [items, setItems] = useState<OrderItem[]>([]);
   const [selectedProduct, setSelectedProduct] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    apiFetchClient("/products").then((r) => setProducts(r.items ?? []));
+    apiFetchClient("/products").then(r => setProducts(r.items ?? []));
     apiFetchClient("/warehouses").then(setWarehouses);
+    apiFetchClient("/suppliers").then(setSuppliers);
   }, []);
 
   function addProduct() {
@@ -86,8 +90,8 @@ export default function RequestOrderModal({ onClose, onSuccess }: Props) {
   const totalAmount = items.reduce((sum, i) => sum + i.qty * i.price, 0);
 
   async function submit() {
-    if (!warehouseId || items.length === 0) {
-      toast.error("All fields are required except Remark");
+    if (!warehouseId || !supplierId || items.length === 0) {
+      toast.error("Warehouse, Supplier and items are required");
       return;
     }
 
@@ -98,8 +102,9 @@ export default function RequestOrderModal({ onClose, onSuccess }: Props) {
         method: "POST",
         body: JSON.stringify({
           warehouse_id: warehouseId,
+          supplier_id: supplierId,
           reason,
-          items: items.map((i) => ({
+          items: items.map(i => ({
             product_id: i.product_id,
             quantity: i.qty,
           })),
@@ -121,6 +126,14 @@ export default function RequestOrderModal({ onClose, onSuccess }: Props) {
       <div className="modal-panel bg-white w-full max-w-3xl p-5 space-y-4">
         <h2 className="font-semibold text-lg">Request Inventory Order</h2>
 
+        <label>From</label>
+        <SupplierSelect
+          suppliers={suppliers}
+          value={supplierId}
+          onChange={setSupplierId}
+        />
+
+        <label>To</label>
         <WarehouseSelect
           warehouses={warehouses}
           value={warehouseId}
@@ -128,6 +141,7 @@ export default function RequestOrderModal({ onClose, onSuccess }: Props) {
         />
 
         {/* Add product */}
+        <label>Products</label>
         <div className="flex gap-2">
           <ProductSelect
             products={products}

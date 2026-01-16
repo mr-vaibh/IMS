@@ -927,6 +927,7 @@ def order_list(request):
             {
                 "id": str(o.id),
                 "warehouse_name": o.warehouse.name,
+                "supplier_name": o.supplier.name,
                 "status": o.status,
                 "created_at": o.created_at,
                 "reason": o.reason,
@@ -961,12 +962,13 @@ def request_order(request):
         return Response({"message": "Forbidden"}, status=403)
 
     warehouse_id = request.data.get("warehouse_id")
+    supplier_id = request.data.get("supplier_id")
     items = request.data.get("items", [])
     reason = request.data.get("reason", "")
 
-    if not warehouse_id:
+    if not warehouse_id or not supplier_id:
         return Response(
-            {"message": "warehouse_id is required"},
+            {"message": "warehouse_id and supplier_id is required"},
             status=400
         )
 
@@ -979,6 +981,7 @@ def request_order(request):
     try:
         order = request_order_service(
             warehouse_id=warehouse_id,
+            supplier_id=supplier_id,
             items=items,
             reason=reason,
             actor=get_actor(request),

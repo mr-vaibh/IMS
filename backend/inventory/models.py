@@ -1,6 +1,6 @@
 import uuid
 from django.db import models
-from company.models import Product, Warehouse, Company
+from company.models import Product, Warehouse, Company, Supplier
 from django.contrib.auth.models import User
 from django.conf import settings
 
@@ -55,6 +55,7 @@ class InventoryOrder(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT)
+    supplier = models.ForeignKey(Supplier, on_delete=models.PROTECT)
 
     reason = models.TextField(blank=True, null=True)
 

@@ -26,6 +26,7 @@ type OrderItem = {
 type Order = {
   id: string;
   warehouse_name: string;
+  supplier_name: string;
   status: string;
   reason: string | null;
   created_at: string;
@@ -81,6 +82,7 @@ export default function OrderTable({ orders }: { orders: Order[] }) {
         <thead>
           <tr>
             <th className="p-2">Product</th>
+            <th className="p-2">Supplier</th>
             <th className="p-2">Warehouse</th>
             <th className="p-2">Created</th>
             <th className="p-2">Status</th>
@@ -114,6 +116,7 @@ export default function OrderTable({ orders }: { orders: Order[] }) {
                   )}
                 </td>
 
+                <td className="p-2">{a.supplier_name}</td>
                 <td className="p-2">{a.warehouse_name}</td>
 
                 <td className="p-2 text-gray-600">

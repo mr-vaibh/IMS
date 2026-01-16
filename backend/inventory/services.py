@@ -303,6 +303,7 @@ def transfer_stock_service(
 def request_order_service(
     *,
     warehouse_id,
+    supplier_id,
     items,
     reason,
     actor,
@@ -312,6 +313,7 @@ def request_order_service(
 
     order = InventoryOrder.objects.create(
         warehouse_id=warehouse_id,
+        supplier_id=supplier_id,
         reason=reason,
         requested_by=actor,
     )
@@ -346,6 +348,7 @@ def request_order_service(
         actor=actor,
         new_data={
             "warehouse_id": str(warehouse_id),
+            "supplier_id": str(supplier_id),
             "items": len(items),
             "total_quantity": total_items,
         },
