@@ -262,15 +262,10 @@ def purchase_order_pdf(request, order_id):
     tax_amount = (subtotal * TAX_RATE).quantize(Decimal("0.01"))
     total = (subtotal + tax_amount).quantize(Decimal("0.01"))
 
-    # ---- Supplier (assumption: same supplier) ----
-    supplier = (
-        items and order.items.first().product.supplier
-    )
-
     context = {
         "company": profile.company,
         "warehouse": order.warehouse,
-        "supplier": supplier,
+        "supplier": order.supplier,
         "order": order,
         "items": items,
         "subtotal": subtotal,
@@ -358,6 +353,7 @@ def received_order_pdf(request, order_id):
     context = {
         "company": profile.company.name if profile.company else "—",
         "warehouse": order.warehouse,
+        "supplier": order.supplier,
         "order": order,
         "items": items,
         "generated_at": timezone.now(),
