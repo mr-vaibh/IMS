@@ -340,7 +340,6 @@ def warehouse_list_create(request):
             Warehouse.objects
             .filter(
                 company=company,
-                deleted_at__isnull=True
             )
             .order_by("name")
         )
@@ -350,6 +349,7 @@ def warehouse_list_create(request):
                 "id": w.id,
                 "name": w.name,
                 "code": w.code,
+                "location": w.location,
                 "deleted_at": w.deleted_at,
             }
             for w in qs
@@ -362,12 +362,15 @@ def warehouse_list_create(request):
         return Response({"message": "Forbidden"}, status=403)
 
     name = request.data.get("name")
+    location = request.data.get("location")
+
     if not name:
         raise ValidationError("Warehouse name is required")
 
     w = Warehouse.objects.create(
         company=company,               # 🔥 derived, not from request
         name=name,
+        location=location,
         code="WH-" + uuid4().hex[:8],
     )
 
@@ -379,6 +382,7 @@ def warehouse_list_create(request):
         new_data={
             "name": w.name,
             "code": w.code,
+            "location": w.location,
             "company_id": str(company.id),
         },
     )
@@ -388,6 +392,7 @@ def warehouse_list_create(request):
             "id": w.id,
             "name": w.name,
             "code": w.code,
+            "location": w.location,
         },
         status=201
     )
@@ -432,7 +437,6 @@ def supplier_list_create(request):
             Supplier.objects
             .filter(
                 belongs_to=company,
-                deleted_at__isnull=True
             )
             .order_by("name")
         )
@@ -441,6 +445,8 @@ def supplier_list_create(request):
             {
                 "id": s.id,
                 "name": s.name,
+                "address": s.address,
+                "deleted_at": s.deleted_at,
             }
             for s in qs
         ])
@@ -452,11 +458,14 @@ def supplier_list_create(request):
         return Response({"message": "Forbidden"}, status=403)
 
     name = request.data.get("name")
+    address = request.data.get("address")
+
     if not name:
         raise ValidationError("Supplier name is required")
 
     supplier = Supplier.objects.create(
         name=name,
+        address=address,
         belongs_to=company,   # 🔥 derived, never from client
     )
 
@@ -467,6 +476,7 @@ def supplier_list_create(request):
         actor=get_actor(request),
         new_data={
             "name": supplier.name,
+            "address": address,
             "company_id": str(company.id),
         },
     )
@@ -475,6 +485,7 @@ def supplier_list_create(request):
         {
             "id": supplier.id,
             "name": supplier.name,
+            "address": supplier.address,
         },
         status=201
     )

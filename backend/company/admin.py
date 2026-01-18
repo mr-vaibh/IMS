@@ -1,5 +1,5 @@
 from django.contrib import admin
-from company.models import Company, Warehouse, Product
+from company.models import Company, Warehouse, Product, Supplier
 
 # Register your models here.
 
@@ -27,3 +27,9 @@ class CompanyAdmin(admin.ModelAdmin):
         if not change:
             obj.created_by = request.user
         super().save_model(request, obj, form, change)
+
+@admin.register(Supplier)
+class SupplierAdmin(admin.ModelAdmin):
+    list_display = ("name", "created_at")
+    search_fields = ("name",)
+    readonly_fields = ("created_at",)

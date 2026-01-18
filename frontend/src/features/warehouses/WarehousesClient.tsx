@@ -6,6 +6,7 @@ import { apiFetchClient } from "@/lib/api.client";
 export default function WarehousesClient() {
   const [items, setItems] = useState<any[]>([]);
   const [name, setName] = useState("");
+  const [location, setLocation] = useState("");
 
   useEffect(() => {
     apiFetchClient("/warehouses").then(setItems);
@@ -16,17 +17,21 @@ export default function WarehousesClient() {
 
     const newWarehouse = await apiFetchClient("/warehouses", {
       method: "POST",
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name, location }),
     });
 
     setItems((prev) => [...prev, newWarehouse]);
     setName("");
+    setLocation("");
   }
 
   async function del(id: string) {
     await apiFetchClient(`/warehouses/${id}`, { method: "DELETE" });
     setItems((prev) => prev.filter((w) => w.id !== id));
   }
+
+  const active = items.filter((w) => !w.deleted_at);
+  const deleted = items.filter((w) => w.deleted_at);
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -41,21 +46,33 @@ export default function WarehousesClient() {
           onChange={(e) => setName(e.target.value)}
         />
 
+        <textarea
+          className="flex-1 rounded-lg border border-slate-200 px-4 py-2"
+          placeholder="Location"
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+        />
+
         <button className="btn-primary px-5" onClick={add}>
           Add
         </button>
       </div>
 
-      {/* List */}
+      {/* Active Warehouses */}
       <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
-        {items.map((w, i) => (
+        {active.map((w, i) => (
           <div
             key={w.id}
             className={`flex items-center justify-between px-5 py-4 ${
-              i !== items.length - 1 ? "border-b border-slate-100" : ""
+              i !== active.length - 1 ? "border-b border-slate-100" : ""
             }`}
           >
-            <span className="font-medium text-slate-800">{w.name}</span>
+            <div className="flex flex-col">
+              <span className="font-medium text-slate-800">{w.name}</span>
+              {w.location && (
+                <span className="text-sm text-slate-500">{w.location}</span>
+              )}
+            </div>
 
             <button
               className="text-sm text-red-600 hover:text-red-700 hover:underline"
@@ -66,6 +83,35 @@ export default function WarehousesClient() {
           </div>
         ))}
       </div>
+
+      {/* Deleted Warehouses */}
+      {deleted.length > 0 && (
+        <div className="rounded-xl border border-red-200 bg-red-50 shadow-sm">
+          <div className="px-5 py-3 text-sm font-semibold text-red-700">
+            Deleted Warehouses
+          </div>
+
+          {deleted.map((w, i) => (
+            <div
+              key={w.id}
+              className={`px-5 py-4 text-red-700 ${
+                i !== deleted.length - 1 ? "border-b border-red-200" : ""
+              }`}
+            >
+              <div className="flex flex-col">
+                <span className="font-medium">{w.name}</span>
+                {w.location && (
+                  <span className="text-sm opacity-80">{w.location}</span>
+                )}
+                <span className="text-xs opacity-70 mt-1">
+                  Deleted on {new Date(w.deleted_at).toLocaleDateString()}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
     </div>
   );
 }
