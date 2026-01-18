@@ -398,20 +398,67 @@ def warehouse_list_create(request):
     )
 
 
-@api_view(["DELETE"])
+@api_view(["PUT", "DELETE"])
 @permission_classes([IsAuthenticated])
-def warehouse_delete(request, pk):
+def warehouse_update_delete(request, pk):
+    try:
+        warehouse = Warehouse.objects.get(id=pk)
+    except Warehouse.DoesNotExist:
+        return Response(status=404)
+
     if not user_has_permission(request.user, "warehouse.manage"):
         return Response({"message": "Forbidden"}, status=403)
 
-    Warehouse.objects.filter(id=pk).update(deleted_at=timezone.now())
+    # --------------------
+    # UPDATE
+    # --------------------
+    if request.method == "PUT":
+        if warehouse.deleted_at:
+            return Response(
+                {"message": "Cannot update deleted warehouse"},
+                status=400
+            )
+
+        old = {
+            "name": warehouse.name,
+            "location": warehouse.location,
+        }
+
+        warehouse.name = request.data.get("name", warehouse.name)
+        warehouse.location = request.data.get("location", warehouse.location)
+        warehouse.save()
+
+        AuditLogger.log(
+            entity="warehouse",
+            entity_id=warehouse.id,
+            action=AuditAction.UPDATE,
+            actor=get_actor(request),
+            old_data=old,
+            new_data={
+                "name": warehouse.name,
+                "location": warehouse.location,
+            },
+        )
+
+        return Response({
+            "id": warehouse.id,
+            "name": warehouse.name,
+            "location": warehouse.location,
+        })
+
+    # --------------------
+    # DELETE (soft)
+    # --------------------
+    warehouse.deleted_at = timezone.now()
+    warehouse.save(update_fields=["deleted_at"])
 
     AuditLogger.log(
         entity="warehouse",
-        entity_id=pk,
+        entity_id=warehouse.id,
         action=AuditAction.DELETE,
         actor=get_actor(request),
     )
+
     return Response({"message": "deleted"})
 
 
@@ -494,17 +541,30 @@ def supplier_list_create(request):
 @permission_classes([IsAuthenticated])
 def supplier_update_delete(request, pk):
     try:
-        supplier = Supplier.objects.get(id=pk, deleted_at__isnull=True)
+        supplier = Supplier.objects.get(id=pk)
     except Supplier.DoesNotExist:
         return Response(status=404)
 
     if not user_has_permission(request.user, "supplier.manage"):
         return Response({"message": "Forbidden"}, status=403)
 
+    # --------------------
+    # UPDATE
+    # --------------------
     if request.method == "PUT":
-        old = {"name": supplier.name}
+        if supplier.deleted_at:
+            return Response(
+                {"message": "Cannot update deleted supplier"},
+                status=400
+            )
 
-        supplier.name = request.data["name"]
+        old = {
+            "name": supplier.name,
+            "address": supplier.address,
+        }
+
+        supplier.name = request.data.get("name", supplier.name)
+        supplier.address = request.data.get("address", supplier.address)
         supplier.save()
 
         AuditLogger.log(
@@ -515,14 +575,21 @@ def supplier_update_delete(request, pk):
             old_data=old,
             new_data={
                 "name": supplier.name,
+                "address": supplier.address,
             },
         )
 
-        return Response({"message": "updated"})
+        return Response({
+            "id": supplier.id,
+            "name": supplier.name,
+            "address": supplier.address,
+        })
 
+    # --------------------
     # DELETE (soft)
+    # --------------------
     supplier.deleted_at = timezone.now()
-    supplier.save()
+    supplier.save(update_fields=["deleted_at"])
 
     AuditLogger.log(
         entity="supplier",

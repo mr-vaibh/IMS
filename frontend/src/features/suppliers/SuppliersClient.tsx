@@ -8,6 +8,10 @@ export default function SuppliersClient() {
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
 
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editAddress, setEditAddress] = useState("");
+
   useEffect(() => {
     apiFetchClient("/suppliers").then(setItems);
   }, []);
@@ -23,6 +27,34 @@ export default function SuppliersClient() {
     setItems((prev) => [...prev, newSupplier]);
     setName("");
     setAddress("");
+  }
+
+  function startEdit(s: any) {
+    setEditingId(s.id);
+    setEditName(s.name);
+    setEditAddress(s.address || "");
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditName("");
+    setEditAddress("");
+  }
+
+  async function saveEdit(id: string) {
+    const updated = await apiFetchClient(`/suppliers/${id}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        name: editName,
+        address: editAddress,
+      }),
+    });
+
+    setItems((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, ...updated } : s)),
+    );
+
+    cancelEdit();
   }
 
   async function del(id: string) {
@@ -63,23 +95,66 @@ export default function SuppliersClient() {
         {active.map((s, i) => (
           <div
             key={s.id}
-            className={`flex items-center justify-between px-5 py-4 ${
+            className={`px-5 py-4 ${
               i !== active.length - 1 ? "border-b border-slate-100" : ""
             }`}
           >
-            <div className="flex flex-col">
-              <span className="font-medium text-slate-800">{s.name}</span>
-              {s.address && (
-                <span className="text-sm text-slate-500">{s.address}</span>
-              )}
-            </div>
+            {editingId === s.id ? (
+              <div className="flex items-start gap-3">
+                <input
+                  className="flex-1 rounded-lg border border-slate-200 px-3 py-2"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                />
 
-            <button
-              className="text-sm text-red-600 hover:text-red-700 hover:underline"
-              onClick={() => del(s.id)}
-            >
-              Delete
-            </button>
+                <textarea
+                  className="flex-1 rounded-lg border border-slate-200 px-3 py-2"
+                  value={editAddress}
+                  onChange={(e) => setEditAddress(e.target.value)}
+                />
+
+                <button
+                  className="text-sm text-green-600 hover:underline"
+                  onClick={() => saveEdit(s.id)}
+                >
+                  Save
+                </button>
+
+                <button
+                  className="text-sm text-slate-500 hover:underline"
+                  onClick={cancelEdit}
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="font-medium text-slate-800">{s.name}</span>
+                  {s.address && (
+                    <span className="text-sm text-slate-500 whitespace-pre-line">
+                      {s.address}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex gap-4">
+                  <button
+                    className="text-sm text-blue-600 hover:underline"
+                    onClick={() => startEdit(s)}
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    className="text-sm text-red-600 hover:underline"
+                    onClick={() => del(s.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>

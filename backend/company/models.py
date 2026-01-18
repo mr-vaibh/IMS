@@ -31,7 +31,7 @@ class Warehouse(models.Model):
     company = models.ForeignKey(Company, on_delete=models.PROTECT, related_name="warehouses")
     code = models.CharField(max_length=50, unique=True)
 
-    location = models.CharField(max_length=100, null=True, blank=True)
+    location = models.TextField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

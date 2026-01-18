@@ -8,6 +8,10 @@ export default function WarehousesClient() {
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
 
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editLocation, setEditLocation] = useState("");
+
   useEffect(() => {
     apiFetchClient("/warehouses").then(setItems);
   }, []);
@@ -23,6 +27,34 @@ export default function WarehousesClient() {
     setItems((prev) => [...prev, newWarehouse]);
     setName("");
     setLocation("");
+  }
+
+  function startEdit(w: any) {
+    setEditingId(w.id);
+    setEditName(w.name);
+    setEditLocation(w.location || "");
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditName("");
+    setEditLocation("");
+  }
+
+  async function saveEdit(id: string) {
+    const updated = await apiFetchClient(`/warehouses/${id}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        name: editName,
+        location: editLocation,
+      }),
+    });
+
+    setItems((prev) =>
+      prev.map((w) => (w.id === id ? { ...w, ...updated } : w)),
+    );
+
+    cancelEdit();
   }
 
   async function del(id: string) {
@@ -63,23 +95,64 @@ export default function WarehousesClient() {
         {active.map((w, i) => (
           <div
             key={w.id}
-            className={`flex items-center justify-between px-5 py-4 ${
+            className={`px-5 py-4 ${
               i !== active.length - 1 ? "border-b border-slate-100" : ""
             }`}
           >
-            <div className="flex flex-col">
-              <span className="font-medium text-slate-800">{w.name}</span>
-              {w.location && (
-                <span className="text-sm text-slate-500">{w.location}</span>
-              )}
-            </div>
+            {editingId === w.id ? (
+              <div className="flex items-start gap-3">
+                <input
+                  className="flex-1 rounded-lg border border-slate-200 px-3 py-2"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                />
 
-            <button
-              className="text-sm text-red-600 hover:text-red-700 hover:underline"
-              onClick={() => del(w.id)}
-            >
-              Delete
-            </button>
+                <textarea
+                  className="flex-1 rounded-lg border border-slate-200 px-3 py-2"
+                  value={editLocation}
+                  onChange={(e) => setEditLocation(e.target.value)}
+                />
+
+                <button
+                  className="text-sm text-green-600 hover:underline"
+                  onClick={() => saveEdit(w.id)}
+                >
+                  Save
+                </button>
+
+                <button
+                  className="text-sm text-slate-500 hover:underline"
+                  onClick={cancelEdit}
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="font-medium text-slate-800">{w.name}</span>
+                  {w.location && (
+                    <span className="text-sm text-slate-500 whitespace-pre-line">{w.location}</span>
+                  )}
+                </div>
+
+                <div className="flex gap-4">
+                  <button
+                    className="text-sm text-blue-600 hover:underline"
+                    onClick={() => startEdit(w)}
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    className="text-sm text-red-600 hover:underline"
+                    onClick={() => del(w.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -111,7 +184,6 @@ export default function WarehousesClient() {
           ))}
         </div>
       )}
-
     </div>
   );
 }

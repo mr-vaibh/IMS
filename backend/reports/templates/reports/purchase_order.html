@@ -22,13 +22,17 @@
   <div class="col box">
     <u>Invoice To</u><br/><br>
     <strong>{{ company.name }}</strong><br/>
-    {{ company.address|default:"" }}
+    <span style="white-space: pre-line;">
+      {{ company.address|default:"" }}
+    </span>
   </div>
 
   <div class="col box">
     <u>Consignee (Ship To)</u><br/><br>
-    <strong>{{ warehouse.name }}</strong><br/>
-    {{ warehouse.location|default:"" }}
+    <strong>{{ warehouse.name }}</strong>
+    <span style="white-space: pre-line;">
+      {{ warehouse.location|default:"" }}
+    </span>
   </div>
 </div>
 
@@ -37,9 +41,11 @@
 <div class="row">
   <div class="col box">
   <u>Supplier</u><br/><br>
-    <strong>{{ supplier.name }}</strong><br/>
+    <strong>{{ supplier.name }}</strong>
     {% if supplier.address %}
-      {{ supplier.address }}
+      <span style="white-space: pre-line;">
+        {{ supplier.address }}
+      </span>
     {% else %}
       <br><br>
     {% endif %}
