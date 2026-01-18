@@ -21,14 +21,22 @@ interface Warehouse {
   deleted_at?: string | null;
 }
 
+interface Supplier {
+  id: string;
+  name: string;
+  deleted_at?: string | null;
+}
+
 interface InventoryTableProps {
   rows: InventoryRow[];
   warehouses: Warehouse[];
+  suppliers: Supplier[];
 }
 
 export default function InventoryTable({
   rows,
   warehouses,
+  suppliers,
 }: InventoryTableProps) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [columnFilters, setColumnFilters] = useState<any[]>([]);
@@ -38,12 +46,6 @@ export default function InventoryTable({
     pageSize: 10,
   });
   const [showDeleted, setShowDeleted] = useState(false);
-
-  // Build unique suppliers list for filter dropdown
-  const suppliers = useMemo(() => {
-    const set = new Set(rows.map((r) => r.supplier_name).filter(Boolean));
-    return Array.from(set);
-  }, [rows]);
 
   // Filter rows based on showDeleted checkbox
   const filteredRows = useMemo(() => {
@@ -312,7 +314,7 @@ export default function InventoryTable({
                               <option value="">All</option>
                               {warehouses.map((w) => (
                                 <option key={w.id} value={w.name}>
-                                  {w.name}
+                                  {w.name} {w.deleted_at ? " (deleted)" : ""}
                                 </option>
                               ))}
                             </select>
@@ -328,8 +330,8 @@ export default function InventoryTable({
                             >
                               <option value="">All</option>
                               {suppliers.map((s) => (
-                                <option key={s} value={s}>
-                                  {s}
+                                <option key={s.id} value={s.name}>
+                                  {s.name} {s.deleted_at ? " (deleted)" : ""}
                                 </option>
                               ))}
                             </select>

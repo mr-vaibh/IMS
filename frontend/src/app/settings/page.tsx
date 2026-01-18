@@ -1,8 +1,10 @@
-"use client";
-
 import CompanySettings from "@/features/settings/CompanySettings";
 import AccountSettings from "@/features/settings/AccountSettings";
 import AdminManagement from "@/features/settings/AdminManagement";
+
+export const metadata = {
+  title: "Settings",
+};
 
 export default function SettingsPage() {
   return (
