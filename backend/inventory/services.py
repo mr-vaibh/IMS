@@ -7,7 +7,7 @@ from django.forms.models import model_to_dict
 from core.audit.enums import AuditAction
 from core.audit.logger import AuditLogger
 from rbac.services import user_has_permission
-from inventory.models import InventoryStock, InventoryLedger, InventoryOrder, Product, Warehouse, InventoryIssue, InventoryOrderItem
+from inventory.models import InventoryStock, InventoryLedger, InventoryOrder, Product, Warehouse, InventoryIssue, InventoryOrderItem, PurchaseRequisition, PurchaseRequisitionItem, GoodsReceiptNote, GoodsReceiptItem
 from users.models import UserProfile
 
 from django.contrib.auth import get_user_model
@@ -420,6 +420,52 @@ def reject_order_service(
     )
 
 
+def apply_grn(grn: GoodsReceiptNote):
+    for item in grn.items.all():
+        stock, _ = InventoryStock.objects.select_for_update().get_or_create(
+            product=item.product,
+            warehouse=grn.order.warehouse,
+        )
+
+        stock.quantity += item.received_quantity
+        stock.version += 1
+        stock.save()
+
+        InventoryLedger.objects.create(
+            product=item.product,
+            warehouse=grn.order.warehouse,
+            change=item.received_quantity,
+            balance_after=stock.quantity,
+            reference_type="GRN",
+            reference_id=grn.id,
+            created_by=grn.received_by,
+        )
+
+
+def apply_issue(issue: InventoryIssue):
+    stock = InventoryStock.objects.select_for_update().get(
+        product=issue.product,
+        warehouse=issue.warehouse,
+    )
+
+    if stock.quantity < issue.quantity:
+        raise ValueError("Insufficient stock")
+
+    stock.quantity -= issue.quantity
+    print("deducting====")
+    stock.version += 1
+    stock.save()
+
+    InventoryLedger.objects.create(
+        product=issue.product,
+        warehouse=issue.warehouse,
+        change=-issue.quantity,
+        balance_after=stock.quantity,
+        reference_type="ISSUE",
+        reference_id=issue.id,
+        created_by=issue.approved_by,
+    )
+
 @transaction.atomic
 def approve_issue(*, issue: InventoryIssue, actor):
     if not isinstance(actor, User):
@@ -450,32 +496,32 @@ def approve_issue(*, issue: InventoryIssue, actor):
     if stock.quantity < issue.quantity:
         raise ValueError("Insufficient stock")
 
-    stock.quantity -= issue.quantity
-    stock.version += 1
-    stock.save()
+    # stock.quantity -= issue.quantity
+    # stock.version += 1
+    # stock.save()
 
-    AuditLogger.log(
-        entity="inventory_issue_created",
-        entity_id=stock.id,
-        action=AuditAction.CREATE,
-        actor=actor,
-        old_data=old_stock,
-        new_data={
-            "quantity": stock.quantity,
-            "version": stock.version,
-        },
-    )
+    # AuditLogger.log(
+    #     entity="inventory_issue_created",
+    #     entity_id=stock.id,
+    #     action=AuditAction.CREATE,
+    #     actor=actor,
+    #     old_data=old_stock,
+    #     new_data={
+    #         "quantity": stock.quantity,
+    #         "version": stock.version,
+    #     },
+    # )
 
-    InventoryLedger.objects.create(
-        product=issue.product,
-        warehouse=issue.warehouse,
-        change=-issue.quantity,
-        balance_after=stock.quantity,
-        reference_type="ISSUE",
-        reference_id=issue.id,
-        reason=issue.issue_type,
-        created_by=actor,
-    )
+    # InventoryLedger.objects.create(
+    #     product=issue.product,
+    #     warehouse=issue.warehouse,
+    #     change=-issue.quantity,
+    #     balance_after=stock.quantity,
+    #     reference_type="ISSUE",
+    #     reference_id=issue.id,
+    #     reason=issue.issue_type,
+    #     created_by=actor,
+    # )
 
     issue.status = InventoryIssue.STATUS_APPROVED
     issue.approved_by = actor
@@ -494,6 +540,14 @@ def approve_issue(*, issue: InventoryIssue, actor):
             "approved_at": issue.approved_at.isoformat(),
         },
     )
+
+
+@transaction.atomic
+def execute_issue(*, issue: InventoryIssue, actor):
+    if issue.status != InventoryIssue.STATUS_APPROVED:
+        raise ValueError("Issue not approved")
+
+    apply_issue(issue)
 
 
 @transaction.atomic
@@ -534,3 +588,413 @@ def reject_issue(*, issue: InventoryIssue, actor, reason=None):
     )
 
     return issue
+
+
+
+@transaction.atomic
+def create_pr_service(*, actor, company, warehouse_id, items):
+    pr = PurchaseRequisition.objects.create(
+        company=company,
+        warehouse_id=warehouse_id,
+        requested_by=actor,
+        status=PurchaseRequisition.STATUS_PENDING,
+    )
+
+    total_qty = 0
+
+    for item in items:
+        qty = int(item["quantity"])
+        if qty <= 0:
+            raise ValueError("Quantity must be positive")
+
+        product_id = item["product_id"]
+        product = Product.objects.get(id=product_id)
+
+        PurchaseRequisitionItem.objects.create(
+            requisition=pr,
+            product=product,
+            quantity=qty,
+            unit=product.unit,
+        )
+        total_qty += qty
+
+    AuditLogger.log(
+        entity="purchase_requisition",
+        entity_id=pr.id,
+        action=AuditAction.CREATE,
+        actor=actor,
+        new_data={
+            "warehouse_id": str(warehouse_id),
+            "items": len(items),
+            "total_quantity": total_qty,
+        },
+    )
+
+    return pr
+
+
+@transaction.atomic
+def approve_pr_service(*, pr_id, actor):
+    pr = PurchaseRequisition.objects.select_for_update().get(id=pr_id)
+
+    if pr.status != PurchaseRequisition.STATUS_PENDING:
+        raise ValueError("PR already processed")
+
+    pr.status = PurchaseRequisition.STATUS_APPROVED
+    pr.approved_by = actor
+    pr.approved_at = now()
+    pr.save()
+
+    AuditLogger.log(
+        entity="purchase_requisition",
+        entity_id=pr.id,
+        action=AuditAction.UPDATE,
+        actor=actor,
+        old_data={"status": "PENDING"},
+        new_data={"status": "APPROVED"},
+    )
+
+    return pr
+
+
+@transaction.atomic
+def reject_pr_service(*, pr_id, actor, reason=None):
+    pr = PurchaseRequisition.objects.select_for_update().get(id=pr_id)
+
+    if pr.status != PurchaseRequisition.STATUS_PENDING:
+        raise ValueError("PR already processed")
+
+    pr.status = PurchaseRequisition.STATUS_REJECTED
+    pr.approved_by = actor
+    pr.approved_at = now()
+    pr.save()
+
+    AuditLogger.log(
+        entity="purchase_requisition",
+        entity_id=pr.id,
+        action=AuditAction.UPDATE,
+        actor=actor,
+        old_data={"status": "PENDING"},
+        new_data={
+            "status": "REJECTED",
+            "reason": reason,
+        },
+    )
+
+    return pr
+
+
+@transaction.atomic
+def create_po_from_pr_service(*, pr_id, supplier_id, actor):
+    pr = (
+        PurchaseRequisition.objects
+        .select_for_update()
+        .prefetch_related("items__product")
+        .get(id=pr_id)
+    )
+
+    if pr.status != PurchaseRequisition.STATUS_APPROVED:
+        raise ValueError("PR must be approved before creating PO")
+
+    po = InventoryOrder.objects.create(
+        pr=pr,
+        warehouse=pr.warehouse,
+        supplier_id=supplier_id,
+        requested_by=actor,
+        status=InventoryOrder.STATUS_PENDING,
+    )
+
+    total_amount = 0
+
+    for item in pr.items.all():
+        rate = item.product.price
+        amount = rate * item.quantity
+
+        InventoryOrderItem.objects.create(
+            order=po,
+            product=item.product,
+            quantity=item.quantity,
+            unit=item.unit,
+            rate=rate,
+            amount=amount,
+        )
+
+        total_amount += amount
+
+    AuditLogger.log(
+        entity="purchase_order",
+        entity_id=po.id,
+        action=AuditAction.CREATE,
+        actor=actor,
+        new_data={
+            "pr_id": str(pr.id),
+            "supplier_id": str(supplier_id),
+            "total_amount": float(total_amount),
+        },
+    )
+
+    return po
+
+@transaction.atomic
+def approve_po_service(*, order_id, actor):
+    po = InventoryOrder.objects.select_for_update().get(id=order_id)
+
+    if po.status != InventoryOrder.STATUS_PENDING:
+        raise ValueError("PO already processed")
+
+    po.status = InventoryOrder.STATUS_APPROVED
+    po.approved_by = actor
+    po.approved_at = now()
+    po.save()
+
+    AuditLogger.log(
+        entity="purchase_order",
+        entity_id=po.id,
+        action=AuditAction.UPDATE,
+        actor=actor,
+        old_data={"status": "PENDING"},
+        new_data={"status": "APPROVED"},
+    )
+
+    return po
+
+
+@transaction.atomic
+def reject_po_service(*, order_id, actor, reason=None):
+    po = InventoryOrder.objects.select_for_update().get(id=order_id)
+
+    if po.status != InventoryOrder.STATUS_PENDING:
+        raise ValueError("PO already processed")
+
+    po.status = InventoryOrder.STATUS_REJECTED
+    po.approved_by = actor
+    po.approved_at = now()
+    po.save()
+
+    AuditLogger.log(
+        entity="purchase_order",
+        entity_id=po.id,
+        action=AuditAction.UPDATE,
+        actor=actor,
+        old_data={"status": "PENDING"},
+        new_data={
+            "status": "REJECTED",
+            "reason": reason,
+        },
+    )
+
+    return po
+
+
+def apply_grn(grn: GoodsReceiptNote):
+    for item in grn.items.all():
+        stock, _ = InventoryStock.objects.select_for_update().get_or_create(
+            product=item.product,
+            warehouse=grn.order.warehouse,
+        )
+
+        stock.quantity += item.received_quantity
+        stock.version += 1
+        stock.save()
+
+        InventoryLedger.objects.create(
+            product=item.product,
+            warehouse=grn.order.warehouse,
+            change=item.received_quantity,
+            balance_after=stock.quantity,
+            reference_type="GRN",
+            reference_id=grn.id,
+            created_by=grn.received_by,
+        )
+
+
+@transaction.atomic
+def create_grn_service(*, order_id, items, actor):
+    if not items:
+        raise ValueError("items required")
+
+    order = (
+        InventoryOrder.objects
+        .select_for_update()
+        .get(id=order_id)
+    )
+
+    if order.status != InventoryOrder.STATUS_APPROVED:
+        raise ValueError("Only approved PO can be received")
+
+    grn = GoodsReceiptNote.objects.create(
+        order=order,
+        received_by=actor,
+        status=GoodsReceiptNote.STATUS_PENDING,
+    )
+
+    for item in items:
+        product_id = item.get("product_id")
+        qty = item.get("received_quantity")
+
+        if not product_id:
+            raise ValueError("product_id missing")
+
+        if qty is None:
+            raise ValueError("received_quantity missing")
+
+        qty = int(qty)
+        if qty <= 0:
+            raise ValueError("received_quantity must be positive")
+
+        GoodsReceiptItem.objects.create(
+            grn=grn,
+            product_id=product_id,
+            received_quantity=qty,
+        )
+
+    AuditLogger.log(
+        entity="grn",
+        entity_id=grn.id,
+        action=AuditAction.CREATE,
+        actor=actor,
+        new_data={
+            "order_id": str(order.id),
+            "items": len(items),
+        },
+    )
+
+    return grn
+
+
+@transaction.atomic
+def approve_grn_service(*, grn_id, actor):
+    grn = (
+        GoodsReceiptNote.objects
+        .select_for_update()
+        .prefetch_related("items__product")
+        .get(id=grn_id)
+    )
+
+    if grn.status != GoodsReceiptNote.STATUS_PENDING:
+        raise ValueError("GRN already processed")
+
+    # 🔥 This is the ONLY place stock increases
+    apply_grn(grn)
+
+    grn.status = GoodsReceiptNote.STATUS_ACCEPTED
+    grn.save(update_fields=["status"])
+
+    order = grn.order
+    order.status = InventoryOrder.STATUS_RECEIVED
+    order.received_by = actor
+    order.received_at = now()
+    order.save(update_fields=["status", "received_by", "received_at"])
+
+    AuditLogger.log(
+        entity="grn",
+        entity_id=grn.id,
+        action=AuditAction.UPDATE,
+        actor=actor,
+        old_data={"status": "PENDING"},
+        new_data={"status": "ACCEPTED"},
+    )
+
+    return grn
+
+
+@transaction.atomic
+def reject_grn_service(*, grn_id, actor, reason=None):
+    grn = GoodsReceiptNote.objects.select_for_update().get(id=grn_id)
+
+    if grn.status != GoodsReceiptNote.STATUS_PENDING:
+        raise ValueError("GRN already processed")
+
+    grn.status = GoodsReceiptNote.STATUS_REJECTED
+    grn.save(update_fields=["status"])
+
+    AuditLogger.log(
+        entity="grn",
+        entity_id=grn.id,
+        action=AuditAction.UPDATE,
+        actor=actor,
+        old_data={"status": "PENDING"},
+        new_data={
+            "status": "REJECTED",
+            "reason": reason,
+        },
+    )
+
+    return grn
+
+
+from inventory.models import IssueSlip, InventoryIssue
+from django.utils.timezone import now
+from django.db import transaction
+
+
+@transaction.atomic
+def approve_issue_slip_service(*, slip_id, actor):
+    slip = IssueSlip.objects.select_for_update().get(id=slip_id)
+
+    if slip.status != IssueSlip.STATUS_PENDING:
+        raise ValueError("Issue slip already processed")
+
+    slip.status = IssueSlip.STATUS_APPROVED
+    slip.approved_by = actor
+    slip.save(update_fields=["status", "approved_by"])
+
+    for item in slip.items.all():
+        issue = InventoryIssue.objects.create(
+            product=item.product,
+            warehouse=slip.warehouse,
+            company=slip.company,
+            quantity=item.quantity,
+            issue_type="SLIP",
+            status=InventoryIssue.STATUS_APPROVED,
+            requested_by=slip.requested_by,
+            approved_by=actor,
+        )
+
+        AuditLogger.log(
+            entity="issue_create",
+            entity_id=slip.id,
+            action=AuditAction.CREATE,
+            actor=actor,
+            old_data={"issue_id": None},
+            new_data={"issue_id": issue.id},
+        )
+
+    AuditLogger.log(
+        entity="issue_slip",
+        entity_id=slip.id,
+        action=AuditAction.UPDATE,
+        actor=actor,
+        old_data={"status": IssueSlip.STATUS_PENDING},
+        new_data={"status": IssueSlip.STATUS_APPROVED},
+    )
+
+    return slip
+
+
+@transaction.atomic
+def reject_issue_slip_service(*, slip_id, actor, reason=None):
+    slip = IssueSlip.objects.select_for_update().get(id=slip_id)
+
+    if slip.status != IssueSlip.STATUS_PENDING:
+        raise ValueError("Issue slip already processed")
+
+    slip.status = IssueSlip.STATUS_REJECTED
+    slip.approved_by = actor
+    slip.save(update_fields=["status", "approved_by"])
+
+    AuditLogger.log(
+        entity="issue_slip",
+        entity_id=slip.id,
+        action=AuditAction.UPDATE,
+        actor=actor,
+        old_data={"status": IssueSlip.STATUS_PENDING},
+        new_data={
+            "status": IssueSlip.STATUS_REJECTED,
+            "reason": reason,
+        },
+    )
+
+    return slip
+
+

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Issue Slip</title>
+
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 12px;
+      color: #000;
+    }
+
+    .container {
+      width: 100%;
+      padding: 16px;
+      border: 1px solid #000;
+    }
+
+    .header {
+      text-align: center;
+      border-bottom: 2px solid #000;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 1px;
+    }
+
+    .company {
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .meta {
+      width: 100%;
+      margin-bottom: 20px;
+    }
+
+    .meta td {
+      padding: 4px 6px;
+      vertical-align: top;
+    }
+
+    .meta .label {
+      font-weight: bold;
+      width: 20%;
+    }
+
+    table.items {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    table.items th,
+    table.items td {
+      border: 1px solid #000;
+      padding: 6px;
+      text-align: left;
+    }
+
+    table.items th {
+      background: #f0f0f0;
+      font-weight: bold;
+    }
+
+    table.items td.qty {
+      text-align: right;
+      width: 15%;
+    }
+
+    .footer {
+      margin-top: 40px;
+    }
+
+    .signatures {
+      width: 100%;
+      margin-top: 50px;
+    }
+
+    .signatures td {
+      width: 33%;
+      text-align: center;
+      padding-top: 40px;
+    }
+
+    .sign-line {
+      border-top: 1px solid #000;
+      margin: 0 20px;
+      padding-top: 4px;
+      font-size: 11px;
+    }
+
+    .small {
+      font-size: 10px;
+      color: #333;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+
+    <!-- HEADER -->
+    <div class="header">
+      <h1>ISSUE SLIP</h1>
+      <div class="company">
+        {{ company.name }}<br/>
+        {{ company.address }}
+      </div>
+    </div>
+
+    <!-- META -->
+    <table class="meta">
+      <tr>
+        <td class="label">Issue Slip ID:</td>
+        <td>{{ slip.id }}</td>
+
+        <td class="label">Date:</td>
+        <td>{{ slip.created_at|date:"d M Y, H:i" }}</td>
+      </tr>
+
+      <tr>
+        <td class="label">Warehouse:</td>
+        <td>{{ warehouse.name }}</td>
+
+        <td class="label">Status:</td>
+        <td>{{ slip.status }}</td>
+      </tr>
+
+      <tr>
+        <td class="label">Requested By:</td>
+        <td>{{ requested_by.get_full_name|default:requested_by.username }}</td>
+
+        <td class="label">Approved By:</td>
+        <td>
+          {% if approved_by %}
+            {{ approved_by.get_full_name|default:approved_by.username }}
+          {% else %}
+            —
+          {% endif %}
+        </td>
+      </tr>
+    </table>
+
+    <!-- ITEMS TABLE -->
+    <table class="items">
+      <thead>
+        <tr>
+          <th style="width: 5%;">#</th>
+          <th>Product</th>
+          <th class="qty">Quantity</th>
+          <th style="width: 15%;">Unit</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td>{{ item.product.name }}</td>
+          <td class="qty">{{ item.quantity }}</td>
+          <td>{{ item.product.unit }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- FOOTER -->
+    <div class="footer small">
+      Generated on {{ generated_at|date:"d M Y, H:i" }} • System Generated Document
+    </div>
+
+    <!-- SIGNATURES -->
+    <table class="signatures">
+      <tr>
+        <td>
+          <div class="sign-line">
+            Requested By
+          </div>
+        </td>
+        <td>
+          <div class="sign-line">
+            Approved By
+          </div>
+        </td>
+        <td>
+          <div class="sign-line">
+            Store / Security
+          </div>
+        </td>
+      </tr>
+    </table>
+
+  </div>
+</body>
+</html>

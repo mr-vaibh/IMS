@@ -4,6 +4,7 @@ import { useState } from "react";
 import StockModal from "./StockModal";
 import TransferModal from "./TransferModal";
 import IssueModal from "./IssueModal";
+import CreateIssueSlipModal from "./issues/CreateIssueSlipModal";
 
 interface Warehouse {
   id: string;
@@ -83,10 +84,11 @@ export default function InventoryActions({
       )}
 
       {modal === "ISSUE" && (
-        <IssueModal
+        <CreateIssueSlipModal
           productId={productId}
           warehouseId={warehouseId}
           onClose={() => setModal(null)}
+          onCreated={() => {}}
         />
       )}
     </>

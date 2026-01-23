@@ -74,7 +74,31 @@ export default function Navbar() {
             Inventory
           </Link>
 
-          {hasPermission(perms, "inventory.view_orders") && (
+          {hasPermission(perms, "inventory.pr.view") && (
+            <Link href="/inventory/pr" className="navbar-link">
+              Requisitions
+            </Link>
+          )}
+
+          {hasPermission(perms, "inventory.po.view") && (
+            <Link href="/inventory/po" className="navbar-link">
+              Orders
+            </Link>
+          )}
+
+          {hasPermission(perms, "inventory.grn.view") && (
+            <Link href="/inventory/grn" className="navbar-link">
+              GRN
+            </Link>
+          )}
+
+          {hasPermission(perms, "inventory.issue_slip.view") && (
+            <Link href="/inventory/issue-slips" className="navbar-link">
+              Issues
+            </Link>
+          )}
+
+          {/* {hasPermission(perms, "inventory.view_orders") && (
             <Link href="/orders" className="navbar-link">
               Orders
             </Link>
@@ -84,7 +108,7 @@ export default function Navbar() {
             <Link href="/issues" className="navbar-link">
               Issues
             </Link>
-          )}
+          )} */}
 
           {hasPermission(perms, "inventory.view") && (
             <Link href="/reports" className="navbar-link">

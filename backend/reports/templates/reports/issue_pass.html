@@ -128,25 +128,55 @@
   <div class="section">
     <div class="box">
       <h4>Issue Details</h4>
-      <p><strong>Issue ID:</strong> {{ issue.id }}</p>
-      <p><strong>Product:</strong> {{ issue.product.name }}</p>
-      <p><strong>Quantity:</strong> {{ issue.quantity }} {{ issue.product.unit }}</p>
-      <p><strong>Issued For:</strong> {{ issue.issue_type }}</p>
+      <p><strong>Issue ID:</strong> {{ slip.id }}</p>
+      <p><strong>Product:</strong> {{ slip.product.name }}</p>
+      <p><strong>Quantity:</strong> {{ slip.quantity }} {{ slip.product.unit }}</p>
+      <p><strong>Issued For:</strong> {{ slip.issue_type }}</p>
     </div>
     <div class="box">
       <h4>Warehouse Info</h4>
-      <p><strong>Warehouse:</strong> {{ issue.warehouse.name }}</p>
-      <p><strong>Requested By:</strong> {{ issue.requested_by.get_full_name|default:issue.requested_by.username }}</p>
-      <p><strong>Requested At:</strong> {{ issue.created_at|date:"d.m.Y H:i" }}</p>
-      <p><strong>Approved By:</strong> {{ issue.approved_by.get_full_name|default:issue.approved_by.username }}</p>
-      <p><strong>Approved At:</strong> {{ issue.approved_at|date:"d.m.Y H:i" }}</p>
+      <p><strong>Warehouse:</strong> {{ slip.warehouse.name }}</p>
+      <p><strong>Requested By:</strong> {{ slip.requested_by.get_full_name|default:slip.requested_by.username }}</p>
+      <p><strong>Requested At:</strong> {{ slip.created_at|date:"d.m.Y H:i" }}</p>
+      <p><strong>Approved By:</strong> {{ slip.approved_by.get_full_name|default:slip.approved_by.username }}</p>
+      <p><strong>Approved At:</strong> {{ slip.approved_at|date:"d.m.Y H:i" }}</p>
     </div>
   </div>
+
+  <table style="width:100%; border-collapse: collapse; margin-top: 10px;">
+    <thead>
+      <tr style="background:#f0f0f0;">
+        <th style="border:1px solid #000; padding:6px;">#</th>
+        <th style="border:1px solid #000; padding:6px;">Product</th>
+        <th style="border:1px solid #000; padding:6px;">Quantity</th>
+        <th style="border:1px solid #000; padding:6px;">Unit</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td style="border:1px solid #000; padding:6px;">{{ forloop.counter }}</td>
+        <td style="border:1px solid #000; padding:6px;">
+          {{ item.product.name }}
+        </td>
+        <td style="border:1px solid #000; padding:6px; text-align:right;">
+          {{ item.quantity }}
+        </td>
+        <td style="border:1px solid #000; padding:6px;">
+          {{ item.product.unit }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <br>
 
   <!-- Additional Notes -->
   <div class="notes">
     <h4>Additional Notes</h4>
-    <p>{{ issue.notes|default:"N/A" }}</p>
+    <p>{{ slip.notes|default:"N/A" }}</p>
   </div>
 
   <!-- Signature -->

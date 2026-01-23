@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -10,7 +11,7 @@ from django.utils.dateparse import parse_date
 from .services import get_stock_report_data, get_inventory_valuation, get_low_stock_report, get_audit_report, get_order_report
 from .utils import get_signature_block
 
-from inventory.models import InventoryLedger, InventoryIssue, InventoryOrder
+from inventory.models import InventoryLedger, InventoryIssue, InventoryOrder, GoodsReceiptNote, IssueSlip
 from django.http import HttpResponseBadRequest
 
 
@@ -217,7 +218,7 @@ def order_report_pdf(request):
 
 
 @login_required
-def purchase_order_pdf(request, order_id):
+def purchase_order_pdf(request, pk):
     from decimal import Decimal
     from django.http import HttpResponseBadRequest
     from django.utils import timezone
@@ -226,7 +227,7 @@ def purchase_order_pdf(request, order_id):
         InventoryOrder.objects
         .select_related("warehouse", "approved_by", "requested_by")
         .prefetch_related("items__product__supplier")
-        .get(id=order_id)
+        .get(id=pk)
     )
 
     if order.status != InventoryOrder.STATUS_APPROVED and order.status != InventoryOrder.STATUS_RECEIVED:
@@ -285,69 +286,87 @@ def purchase_order_pdf(request, order_id):
 
 
 @login_required
-def issue_pass_pdf(request, issue_id):
-    issue = InventoryIssue.objects.select_related(
-        "product",
-        "warehouse",
-        "approved_by",
-        "requested_by",
-    ).get(id=issue_id)
-
-    if issue.status != InventoryIssue.STATUS_APPROVED:
-        return HttpResponseBadRequest("Issue not approved")
-
-    profile = request.user.userprofile
-
-    context = {
-        "company": profile.company.name if profile.company else "—",
-        "generated_at": timezone.now(),
-        "issue": issue,
-        "signature": get_signature_block(profile),
-    }
-
-    html = render_to_string(
-        "reports/issue_pass.html",
-        context,
+def issue_slip_pdf(request, pk):
+    slip = get_object_or_404(
+        IssueSlip.objects
+        .select_related("warehouse", "requested_by", "approved_by")
+        .prefetch_related("items__product"),
+        id=pk,
     )
 
-    pdf = HTML(string=html).write_pdf()
-    response = HttpResponse(pdf, content_type="application/pdf")
-    response["Content-Disposition"] = "inline; filename=issue_pass.pdf"
+    context = {
+        "slip": slip,
+        "company": slip.company,
+        "warehouse": slip.warehouse,
+        "items": slip.items.all(),
+        "requested_by": slip.requested_by,
+        "approved_by": slip.approved_by,
+        "generated_at": timezone.now(),
+    }
 
+    html = render_to_string("reports/issue_slip.html", context)
+    pdf = HTML(string=html).write_pdf()
+
+    response = HttpResponse(pdf, content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'inline; filename=Issue_Slip_{slip.id}.pdf'
+    )
     return response
 
+
 @login_required
-def received_order_pdf(request, order_id):
+def issue_pass_pdf(request, pk):
+    slip = (
+        IssueSlip.objects
+        .select_related("warehouse", "requested_by", "approved_by")
+        .prefetch_related("items__product")
+        .get(id=pk)
+    )
+
+    if slip.status != IssueSlip.STATUS_ISSUED:
+        return HttpResponseBadRequest("Slip not issued yet")
+
+    context = {
+        "slip": slip,
+        "items": slip.items.all(),
+        "generated_at": timezone.now(),
+    }
+
+    html = render_to_string("reports/issue_pass.html", context)
+    pdf = HTML(string=html).write_pdf()
+
+    return HttpResponse(pdf, content_type="application/pdf")
+
+@login_required
+def grn_pdf(request, pk):
     """
-    Generate a PDF showing which user received an approved order
-    and when (Stock In clicked).
+    Generate GRN PDF (Goods Receipt Note)
     """
     try:
-        order = (
-            InventoryOrder.objects
-            .select_related("warehouse", "received_by", "requested_by", "approved_by")
+        grn = (
+            GoodsReceiptNote.objects
+            .select_related(
+                "order__warehouse",
+                "order__supplier",
+                "received_by",
+            )
             .prefetch_related("items__product")
-            .get(id=order_id)
+            .get(id=pk)
         )
-    except InventoryOrder.DoesNotExist:
-        return HttpResponseBadRequest("Order not found")
-
-    if not order.received_at or not order.received_by:
-        return HttpResponseBadRequest("Order has not been received yet")
+    except GoodsReceiptNote.DoesNotExist:
+        return HttpResponseBadRequest("GRN not found")
 
     profile = request.user.userprofile
+    order = grn.order
 
-    # Build items list for PDF
     items = [
         {
             "name": item.product.name,
             "sku": item.product.sku,
-            "qty": item.quantity,
-            "unit": item.unit,
-            "rate": item.rate,
-            "amount": item.amount,
+            "qty": item.received_quantity,
+            "unit": item.product.unit,
         }
-        for item in order.items.all()
+        for item in grn.items.all()
     ]
 
     context = {
@@ -355,17 +374,16 @@ def received_order_pdf(request, order_id):
         "warehouse": order.warehouse,
         "supplier": order.supplier,
         "order": order,
+        "grn": grn,
         "items": items,
         "generated_at": timezone.now(),
-        "received_by": order.received_by,
-        "received_at": order.received_at,
+        "received_by": grn.received_by,
         "signature": get_signature_block(profile),
     }
 
-    html = render_to_string("reports/received_order.html", context)
+    html = render_to_string("reports/grn.html", context)
     pdf = HTML(string=html).write_pdf()
 
     response = HttpResponse(pdf, content_type="application/pdf")
-    response["Content-Disposition"] = f'inline; filename=Received_Order_{order.id}.pdf'
-
+    response["Content-Disposition"] = f'inline; filename=GRN_{grn.id}.pdf'
     return response

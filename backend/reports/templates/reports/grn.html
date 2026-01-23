@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Goods Receipt Note - {{ grn.id }}</title>
+  <style>
+    body {
+      font-family: Helvetica, Arial, sans-serif;
+      font-size: 12px;
+      color: #333;
+      padding: 20px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 5px;
+    }
+
+    .sub-title {
+      text-align: center;
+      font-size: 11px;
+      margin-bottom: 20px;
+    }
+
+    .header-grid {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .box {
+      width: 48%;
+      border: 1px solid #aaa;
+      padding: 10px;
+    }
+
+    strong {
+      width: 140px;
+      display: inline-block;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    th, td {
+      border: 1px solid #aaa;
+      padding: 6px;
+    }
+
+    th {
+      background: #f2f2f2;
+    }
+
+    .text-right {
+      text-align: right;
+    }
+
+    .signature {
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid #000;
+      padding-top: 20px;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>GOODS RECEIPT NOTE (GRN)</h2>
+  <div class="sub-title">Material Receipt Document</div>
+
+  <div class="header-grid">
+    <div class="box">
+      <p><strong>GRN No:</strong> GRN-{{ grn.id }}</p>
+      <p><strong>GRN Date:</strong> {{ grn.created_at|date:"d M Y, H:i" }}</p>
+      <p><strong>Warehouse:</strong> {{ warehouse.name }}</p>
+    </div>
+
+    <div class="box">
+      <p><strong>PO No:</strong> {{ order.id }}</p>
+      <p><strong>Supplier:</strong> {{ supplier.name }}</p>
+      <p><strong>Requested By:</strong> {{ order.requested_by.username }}</p>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Item Description</th>
+        <th>SKU</th>
+        <th class="text-right">Qty Received</th>
+        <th>Unit</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td>{{ item.name }}</td>
+        <td>{{ item.sku }}</td>
+        <td class="text-right">{{ item.qty }}</td>
+        <td>{{ item.unit }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="signature">
+    <div>
+      <strong>Received & Verified By</strong><br><br>
+      {{ received_by.username }}<br>
+      Date: {{ grn.created_at|date:"d M Y, H:i" }}
+    </div>
+
+    <div style="text-align:right;">
+      <strong>Authorised Signatory</strong><br><br>
+      {{ signature.signed_by }}<br>
+      {{ signature.company }}<br>
+      {{ signature.role }}<br>
+      Signed on: {{ signature.signed_at|date:"d M Y, H:i" }}
+    </div>
+  </div>
+
+  <p style="text-align:center; margin-top:20px;">
+    <em>This is a system-generated Goods Receipt Note.</em>
+  </p>
+</body>
+</html>

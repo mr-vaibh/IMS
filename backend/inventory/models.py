@@ -39,6 +39,54 @@ class InventoryLedger(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
 
+
+class PurchaseRequisition(models.Model):
+    STATUS_DRAFT = "DRAFT"
+    STATUS_PENDING = "SUBMITTED"
+    STATUS_APPROVED = "APPROVED"
+    STATUS_REJECTED = "REJECTED"
+
+    STATUS_CHOICES = [
+        (STATUS_DRAFT, "Draft"),
+        (STATUS_PENDING, "Pending"),
+        (STATUS_APPROVED, "Approved"),
+        (STATUS_REJECTED, "Rejected"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT)
+    company = models.ForeignKey(Company, on_delete=models.PROTECT)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_DRAFT)
+
+    requested_by = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name="purchase_requisitions"
+    )
+    approved_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.PROTECT
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    approved_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"PR {self.id} - {self.status}"
+
+
+
+class PurchaseRequisitionItem(models.Model):
+    requisition = models.ForeignKey(
+        PurchaseRequisition,
+        related_name="items",
+        on_delete=models.CASCADE,
+    )
+
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField()
+    unit = models.CharField(max_length=20)
+
+
 class InventoryOrder(models.Model):
     STATUS_PENDING = "PENDING"
     STATUS_APPROVED = "APPROVED"
@@ -53,6 +101,12 @@ class InventoryOrder(models.Model):
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    pr = models.ForeignKey(
+        PurchaseRequisition,
+        on_delete=models.PROTECT,
+        related_name="purchase_orders",
+    )
 
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT)
     supplier = models.ForeignKey(Supplier, on_delete=models.PROTECT)
@@ -95,6 +149,83 @@ class InventoryOrderItem(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
 
+
+class GoodsReceiptNote(models.Model):
+    STATUS_PENDING = "PENDING"
+    STATUS_ACCEPTED = "ACCEPTED"
+    STATUS_REJECTED = "REJECTED"
+
+    STATUS_CHOICES = [
+        (STATUS_PENDING, "Pending"),
+        (STATUS_ACCEPTED, "Accepted"),
+        (STATUS_REJECTED, "Rejected"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    order = models.ForeignKey(
+        InventoryOrder,
+        related_name="grns",
+        on_delete=models.PROTECT,
+    )
+
+    received_by = models.ForeignKey(User, on_delete=models.PROTECT)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class GoodsReceiptItem(models.Model):
+    grn = models.ForeignKey(
+        GoodsReceiptNote,
+        related_name="items",
+        on_delete=models.CASCADE,
+    )
+
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    received_quantity = models.PositiveIntegerField()
+
+
+class IssueSlip(models.Model):
+    STATUS_PENDING = "PENDING"
+    STATUS_APPROVED = "APPROVED"
+    STATUS_REJECTED = "REJECTED"
+    STATUS_ISSUED = "ISSUED"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT)
+    company = models.ForeignKey(Company, on_delete=models.PROTECT)
+
+    requested_by = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name="requested_issue_slips",
+    )
+
+    approved_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.PROTECT, related_name="approved_issue_slips",
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            (STATUS_PENDING, "Pending"),
+            (STATUS_APPROVED, "Approved"),
+            (STATUS_REJECTED, "Rejected"),
+        ],
+        default=STATUS_PENDING,
+    )
+
+    purpose = models.TextField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+# inventory/models.py
+class IssueSlipItem(models.Model):
+    slip = models.ForeignKey(IssueSlip, on_delete=models.CASCADE, related_name="items")
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField()
+
+
 class InventoryIssue(models.Model):
     STATUS_PENDING = "PENDING"
     STATUS_APPROVED = "APPROVED"
@@ -124,11 +255,17 @@ class InventoryIssue(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
+    issue_slip = models.ForeignKey(
+        IssueSlip,
+        on_delete=models.PROTECT,
+        related_name="issues",
+    )
+
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT)
     company = models.ForeignKey(Company, on_delete=models.PROTECT)
 
-    quantity = models.IntegerField()
+    quantity = models.PositiveIntegerField()
     issue_type = models.CharField(max_length=20, choices=ISSUE_TYPE_CHOICES)
     notes = models.TextField(blank=True)
 

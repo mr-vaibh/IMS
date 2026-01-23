@@ -6,17 +6,37 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         permissions = [
+            # Inventory visibility
             "inventory.view",
-            "inventory.stock_in",
-            "inventory.stock_out",
-            "inventory.transfer",
-            "inventory.adjust",
-            "inventory.approve_order",
             "inventory.view_audit",
-            "inventory.view_orders",
-            "inventory.issue",
-            "inventory.issue_view",
-            "inventory.issue_approve",
+
+            # Purchase Requisition (PR)
+            "inventory.pr.create",
+            "inventory.pr.view",
+            "inventory.pr.approve",
+
+            # Purchase Order (PO)
+            "inventory.po.create",
+            "inventory.po.view",
+            "inventory.po.approve",
+
+            # Goods Receipt Note (GRN)
+            "inventory.grn.create",
+            "inventory.grn.view",
+            "inventory.grn.approve",
+
+            # Issue Slip (request)
+            "inventory.issue_slip.create",
+            "inventory.issue_slip.view",
+            "inventory.issue_slip.approve",
+
+            # Issue execution (stock deduction)
+            "inventory.issue.execute",
+
+            # Transfers
+            "inventory.transfer",
+
+            # Masters
             "product.manage",
             "warehouse.manage",
             "supplier.manage",
@@ -30,27 +50,64 @@ class Command(BaseCommand):
 
         roles = {
             "Admin": permissions,
+
             "Manager": [
                 "inventory.view",
-                "inventory.stock_in",
-                "inventory.stock_out",
-                "inventory.transfer",
-                "inventory.adjust",
-                "inventory.approve_order",
                 "inventory.view_audit",
-                "inventory.view_orders",
-                "inventory.issue",
-                "inventory.issue_view",
-                "inventory.issue_approve",
+
+                "inventory.pr.view",
+                "inventory.pr.create",
+                "inventory.pr.approve",
+
+                "inventory.po.view",
+                "inventory.po.create",
+                "inventory.po.approve",
+
+                "inventory.grn.view",
+                "inventory.grn.create",
+                "inventory.grn.approve",
+
+                "inventory.issue_slip.view",
+                "inventory.issue_slip.create",
+                "inventory.issue_slip.approve",
+
+                "inventory.issue.execute",
+
+                "inventory.transfer",
+
+                "product.manage",
+                "warehouse.manage",
+                "supplier.manage",
+                "company.manage",
             ],
-            "Staff": [
-                "inventory.view",
-                "inventory.stock_in",
-                "inventory.stock_out",
-                "inventory.adjust",
-                "inventory.issue",
-                "inventory.issue_view",
+    
+            "Staff-II": [
+                "inventory.pr.view",
+                "inventory.pr.create",
+                "inventory.issue_slip.view",
+                "inventory.issue_slip.create",
+                "inventory.po.create",
+                "inventory.po.view",
             ],
+
+            "Gate": [
+                "inventory.grn.view",
+                "inventory.grn.create",
+                "inventory.grn.approve",
+            ],
+
+            "Store": [
+                "inventory.issue.execute",
+                "inventory.issue_slip.view",
+            ],
+
+            "Staff-I": [
+                "inventory.pr.view",
+                "inventory.pr.create",
+                "inventory.issue_slip.view",
+                "inventory.issue_slip.create",
+            ],
+
             "Viewer": [
                 "inventory.view",
             ],
