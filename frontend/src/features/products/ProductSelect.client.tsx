@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import CreatableSelect from "react-select/creatable";
 import { apiFetchClient } from "@/lib/api.client";
 
-interface Product {
+type Product = {
   id: string;
   name: string;
-  sku: string;
+  unit: string;
+  sku?: string;
 }
 
 interface Option {

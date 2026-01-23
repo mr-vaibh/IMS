@@ -17,7 +17,8 @@ type Product = {
   id: string;
   name: string;
   unit: string;
-};
+  sku?: string;
+}
 
 type Warehouse = {
   id: string;

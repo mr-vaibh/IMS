@@ -29,11 +29,6 @@ export default function POCreateFromPRModal({
     setPrices(initial);
   }, [pr]);
 
-  function updateRate(productId: string, value: number) {
-    if (value < 0) return;
-    setRates({ ...rates, [productId]: value });
-  }
-
   async function submit() {
     if (!supplierId) {
       toast.error("Supplier is required");
