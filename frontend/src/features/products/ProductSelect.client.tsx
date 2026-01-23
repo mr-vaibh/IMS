@@ -8,6 +8,7 @@ type Product = {
   id: string;
   name: string;
   unit: string;
+  price: number;
   sku?: string;
 }
 

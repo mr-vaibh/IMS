@@ -168,7 +168,7 @@ export default function Navbar() {
         {/* Logout Button */}
         <div className="hidden md:block ml-4">
           {user && (
-            <span className="text-slate-700 font-medium mr-4">{user.username}</span>
+            <span className="text-slate-700 font-bold mr-4">{user.username}</span>
           )}
           <button onClick={logout} className="btn-ghost">
             Logout

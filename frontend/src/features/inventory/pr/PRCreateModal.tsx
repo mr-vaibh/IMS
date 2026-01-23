@@ -17,8 +17,9 @@ type Product = {
   id: string;
   name: string;
   unit: string;
+  price: number;
   sku?: string;
-}
+};
 
 type Warehouse = {
   id: string;
@@ -43,7 +44,7 @@ export default function PRCreateModal({ open, onClose, onCreated }: Props) {
   useEffect(() => {
     if (!open) return;
 
-    apiFetchClient("/products").then(r => setProducts(r.items ?? []));
+    apiFetchClient("/products").then((r) => setProducts(r.items ?? []));
     apiFetchClient("/warehouses").then(setWarehouses);
   }, [open]);
 
@@ -52,15 +53,15 @@ export default function PRCreateModal({ open, onClose, onCreated }: Props) {
   function addProduct() {
     if (!selectedProduct) return;
 
-    const p = products.find(x => x.id === selectedProduct);
+    const p = products.find((x) => x.id === selectedProduct);
     if (!p) return;
 
-    if (items.some(i => i.product_id === p.id)) {
+    if (items.some((i) => i.product_id === p.id)) {
       toast.error("Product already added");
       return;
     }
 
-    setItems(prev => [
+    setItems((prev) => [
       ...prev,
       {
         product_id: p.id,
@@ -95,7 +96,7 @@ export default function PRCreateModal({ open, onClose, onCreated }: Props) {
         method: "POST",
         body: JSON.stringify({
           warehouse_id: warehouseId,
-          items: items.map(i => ({
+          items: items.map((i) => ({
             product_id: i.product_id,
             quantity: i.qty,
           })),
@@ -113,6 +114,11 @@ export default function PRCreateModal({ open, onClose, onCreated }: Props) {
       setLoading(false);
     }
   }
+
+  const totalAmount = items.reduce((sum, item) => {
+    const product = products.find((p) => p.id === item.product_id);
+    return sum + (product?.price ?? 0) * item.qty;
+  }, 0);
 
   return (
     <div className="fixed inset-0 z-40 modal-backdrop flex items-center justify-center px-4">
@@ -159,7 +165,7 @@ export default function PRCreateModal({ open, onClose, onCreated }: Props) {
                     min={1}
                     className="border p-1 w-20"
                     value={i.qty}
-                    onChange={e => updateQty(idx, Number(e.target.value))}
+                    onChange={(e) => updateQty(idx, Number(e.target.value))}
                   />
                 </td>
                 <td>
@@ -184,17 +190,25 @@ export default function PRCreateModal({ open, onClose, onCreated }: Props) {
         </table>
 
         {/* Footer */}
-        <div className="flex justify-end gap-2 pt-2">
-          <button onClick={onClose} className="btn-ghost">
-            Cancel
-          </button>
-          <button
-            onClick={submit}
-            disabled={loading}
-            className="btn-primary"
-          >
-            {loading ? "Submitting…" : "Submit PR"}
-          </button>
+        <div className="flex justify-between items-center pt-2">
+          <div className="text-sm text-gray-700">
+            Total: ₹ {" "}
+            <span className="font-semibold">
+              {totalAmount.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </span>
+          </div>
+
+          <div className="flex gap-2">
+            <button onClick={onClose} className="btn-ghost">
+              Cancel
+            </button>
+            <button onClick={submit} disabled={loading} className="btn-primary">
+              {loading ? "Submitting…" : "Submit PR"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

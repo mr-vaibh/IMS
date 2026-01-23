@@ -19,7 +19,7 @@ type Product = {
   id: string;
   name: string;
   unit: string;
-  price: number | string;
+  price: number;
 };
 
 interface Props {
