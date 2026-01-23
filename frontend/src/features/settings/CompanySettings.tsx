@@ -68,7 +68,7 @@ export default function CompanySettings() {
         </label>
         <textarea
           rows={3}
-          placeholder="123 Main Street, San Francisco, CA"
+          placeholder="Address & Details"
           value={address}
           onChange={(e) => setAddress(e.target.value)}
         />

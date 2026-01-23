@@ -80,7 +80,7 @@ export default function SuppliersClient() {
 
         <textarea
           className="flex-1 rounded-lg border border-slate-200 px-4 py-2"
-          placeholder="Address"
+          placeholder="Address & Details"
           value={address}
           onChange={(e) => setAddress(e.target.value)}
         />

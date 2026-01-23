@@ -80,7 +80,7 @@ export default function WarehousesClient() {
 
         <textarea
           className="flex-1 rounded-lg border border-slate-200 px-4 py-2"
-          placeholder="Location"
+          placeholder="Location & Details"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
         />
