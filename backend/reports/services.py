@@ -1,4 +1,8 @@
 # backend/reports/services.py
+from calendar import monthrange
+from datetime import datetime
+from django.db.models import Sum
+from django.utils import timezone
 from inventory.models import InventoryStock, InventoryLedger, InventoryOrder, InventoryOrderItem
 from django.utils.dateparse import parse_date
 
@@ -18,6 +22,83 @@ def get_stock_report_data():
         .order_by("product__name", "warehouse__name")
     )
 
+from inventory.models import Product, Warehouse
+
+def get_monthly_stock_report(*, company, month):
+    year, month_num = map(int, month.split("-"))
+    days_in_month = monthrange(year, month_num)[1]
+
+    start_date = datetime(year, month_num, 1, tzinfo=timezone.UTC)
+    end_date = datetime(
+        year, month_num, days_in_month, 23, 59, 59, tzinfo=timezone.UTC
+    )
+
+    rows = []
+
+    # 🔹 DRIVE REPORT FROM CURRENT STOCK (SOURCE OF TRUTH)
+    stocks = (
+        InventoryStock.objects
+        .select_related("product", "warehouse")
+        .filter(warehouse__company=company)
+    )
+
+    for stock in stocks:
+        # 🔹 CURRENT BALANCE
+        current_qty = stock.quantity
+
+        # 🔹 SUM OF ALL MOVEMENTS *AFTER* MONTH START
+        future_delta = (
+            InventoryLedger.objects
+            .filter(
+                product=stock.product,
+                warehouse=stock.warehouse,
+                created_at__gte=start_date,
+            )
+            .aggregate(total=Sum("change"))["total"] or 0
+        )
+
+        # 🔹 CORRECT OPENING BALANCE
+        opening = current_qty - future_delta
+
+        balance = opening
+        daily = {}
+
+        # 🔹 DAILY RUNNING BALANCE
+        for day in range(1, days_in_month + 1):
+            day_start = datetime(year, month_num, day, tzinfo=timezone.UTC)
+            day_end = datetime(
+                year, month_num, day, 23, 59, 59, tzinfo=timezone.UTC
+            )
+
+            delta = (
+                InventoryLedger.objects
+                .filter(
+                    product=stock.product,
+                    warehouse=stock.warehouse,
+                    created_at__range=(day_start, day_end),
+                )
+                .aggregate(total=Sum("change"))["total"] or 0
+            )
+
+            balance += delta
+            daily[day] = balance
+
+        rows.append({
+            "product_id": stock.product.id,
+            "product_name": stock.product.name,
+            "warehouse_id": stock.warehouse.id,
+            "warehouse_name": stock.warehouse.name,
+            "unit": stock.product.unit,
+            "opening": opening,
+            "daily": daily,
+            "closing": balance,
+        })
+
+    return {
+        "month": month,
+        "days": days_in_month,
+        "rows": rows,
+    }
 
 
 def get_inventory_valuation():
@@ -148,3 +229,57 @@ def get_order_report(filters):
         "requested_by_username",
         "approved_by_username",
     ).order_by("-order_created_at")
+
+
+def get_inventory_aging_report():
+    today = timezone.now().date()
+
+    stocks = (
+        InventoryStock.objects
+        .select_related("product", "warehouse")
+        .filter(quantity__gt=0)
+    )
+
+    report = []
+
+    for stock in stocks:
+        last_in = (
+            InventoryLedger.objects
+            .filter(
+                product=stock.product,
+                warehouse=stock.warehouse,
+                change__gt=0,
+            )
+            .order_by("-created_at")
+            .first()
+        )
+
+        if last_in:
+            age_days = (today - last_in.created_at.date()).days
+            last_in_date = last_in.created_at.date()
+        else:
+            age_days = None
+            last_in_date = None
+
+        if age_days is None:
+            bucket = "UNKNOWN"
+        elif age_days <= 30:
+            bucket = "0–30"
+        elif age_days <= 60:
+            bucket = "31–60"
+        elif age_days <= 90:
+            bucket = "61–90"
+        else:
+            bucket = "90+"
+
+        report.append({
+            "product_id": stock.product.id,
+            "product_name": stock.product.name,
+            "warehouse": stock.warehouse.name,
+            "quantity": stock.quantity,
+            "last_in_date": last_in_date,
+            "age_days": age_days,
+            "bucket": bucket,
+        })
+
+    return report

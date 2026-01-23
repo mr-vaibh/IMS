@@ -667,7 +667,7 @@ def audit_list(request):
 # ================ Reports Views =================
 
 
-from reports.services import get_inventory_valuation, get_low_stock_report, get_audit_report, get_order_report
+from reports.services import get_inventory_valuation, get_low_stock_report, get_audit_report, get_order_report, get_inventory_aging_report, get_monthly_stock_report
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -696,6 +696,24 @@ def stock_report(request):
         }
         for s in qs
     ])
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def monthly_stock_report(request):
+    if not user_has_permission(request.user, "inventory.view"):
+        return Response({"message": "Forbidden"}, status=403)
+
+    month = request.GET.get("month")
+    if not month:
+        return Response({"message": "month is required (YYYY-MM)"}, status=400)
+
+    data = get_monthly_stock_report(
+        company=request.user.userprofile.company,
+        month=month,
+    )
+
+    return Response(data)
 
 
 @api_view(["GET"])
@@ -790,6 +808,17 @@ def order_report(request):
 
     data = get_order_report(filters)
     return Response({"items": data})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def inventory_aging_report(request):
+    if not user_has_permission(request.user, "inventory.view"):
+        return Response({"message": "Forbidden"}, status=403)
+
+    data = get_inventory_aging_report()
+    return Response(data)
+
 
 
 # ================ Stock View =================

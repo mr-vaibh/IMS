@@ -452,7 +452,6 @@ def apply_issue(issue: InventoryIssue):
         raise ValueError("Insufficient stock")
 
     stock.quantity -= issue.quantity
-    print("deducting====")
     stock.version += 1
     stock.save()
 

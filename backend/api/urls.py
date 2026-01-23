@@ -66,10 +66,12 @@ urlpatterns = [
 
     # ================= Audit & Reports =================
     path("audit", views.audit_list),
+    path("reports/monthly-stock", views.monthly_stock_report),
     path("reports/stock", views.stock_report),
     path("reports/movement", views.movement_report),
     path("reports/valuation", views.inventory_valuation_report),
     path("reports/low-stock", views.low_stock_report),
     path("reports/audit", views.audit_report),
     path("reports/orders", views.order_report),
+    path("reports/aging", views.inventory_aging_report),
 ]
