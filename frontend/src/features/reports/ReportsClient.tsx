@@ -15,7 +15,7 @@ type ReportType =
   | "valuation"
   | "low-stock"
   | "audit"
-  | "order";
+  | "order-items";
 
 export default function ReportsClient() {
   const [activeReport, setActiveReport] = useState<ReportType>("stock");
@@ -94,7 +94,7 @@ export default function ReportsClient() {
             <option value="valuation">Inventory Valuation</option>
             <option value="low-stock">Low Stock / Reorder</option>
             <option value="audit">Audit Report</option>
-            <option value="order">Orders Report</option>
+            <option value="order-items">Order Items Report</option>
           </select>
         </div>
 
@@ -143,7 +143,7 @@ export default function ReportsClient() {
 
       {activeReport === "audit" && <AuditReport rows={audit} startDate={startDate} endDate={endDate} />}
 
-      {activeReport === "order" && <OrderReport rows={orders} startDate={startDate} endDate={endDate} />
+      {activeReport === "order-items" && <OrderReport rows={orders} startDate={startDate} endDate={endDate} />
     }
 
 

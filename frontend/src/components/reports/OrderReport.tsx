@@ -18,7 +18,7 @@ export default function OrderReport({
   const query = params.toString();
   return (
     <ReportLayout
-      title="Inventory Orders"
+      title="Inventory Orders Items"
       filename="order_report.csv"
       rows={rows}
       pdfEndpoint={`/reports/orders/pdf?${query}`}
@@ -31,7 +31,6 @@ export default function OrderReport({
             <th className="p-2">Warehouse</th>
             <th className="p-2 text-right">Delta</th>
             <th className="p-2">Status</th>
-            <th className="p-2">Reason</th>
             <th className="p-2">Requested By</th>
             <th className="p-2">Approved By</th>
           </tr>
@@ -47,37 +46,19 @@ export default function OrderReport({
           ) : (
             rows.map((r, i) => (
               <tr key={i} className="border-t">
-                <td className="p-2">
-                  {new Date(r.created_at).toLocaleString()}
-                </td>
+                <td>{new Date(r.order_created_at).toLocaleString()}</td>
 
-                <td className="p-2">
-                  {r["product__name"]}
-                </td>
+                <td>{r.product_name}</td>
 
-                <td className="p-2">
-                  {r["warehouse__name"]}
-                </td>
+                <td>{r.warehouse_name}</td>
 
-                <td className="p-2 text-right tabular-nums">
-                  {r.delta}
-                </td>
+                <td className="text-right text-red-600">{r.delta}</td>
 
-                <td className="p-2 font-medium">
-                  {r.status}
-                </td>
+                <td>{r.order_status}</td>
 
-                <td className="p-2 max-w-xs truncate" title={r.reason}>
-                  {r.reason || "—"}
-                </td>
+                <td>{r.requested_by_username || "System"}</td>
 
-                <td className="p-2">
-                  {r["requested_by__username"] || "System"}
-                </td>
-
-                <td className="p-2">
-                  {r["approved_by__username"] || "—"}
-                </td>
+                <td>{r.approved_by_username || "—"}</td>
               </tr>
             ))
           )}

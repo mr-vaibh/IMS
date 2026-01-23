@@ -1,5 +1,5 @@
 # backend/reports/services.py
-from inventory.models import InventoryStock, InventoryLedger, InventoryOrder
+from inventory.models import InventoryStock, InventoryLedger, InventoryOrder, InventoryOrderItem
 from django.utils.dateparse import parse_date
 
 from django.db.models import F, DecimalField, ExpressionWrapper
@@ -97,33 +97,54 @@ def get_audit_report(filters: dict):
     )
 
 
-def get_order_report(filters: dict):
-    qs = InventoryOrder.objects.select_related(
-        "product",
-        "warehouse",
-    ).order_by("-created_at")
+from django.db.models import F
 
-    if filters.get("start_date"):
-        qs = qs.filter(created_at__date__gte=filters["start_date"])
-
-    if filters.get("end_date"):
-        qs = qs.filter(created_at__date__lte=filters["end_date"])
-
-    if filters.get("status"):
-        qs = qs.filter(status=filters["status"])
-
-    qs = qs[:2000]
-
-    return list(
-        qs.values(
-            "created_at",
-            "product__name",
-            "warehouse__name",
-            "delta",
-            "status",
-            "reason",
-            "requested_by__username",
-            "approved_by__username",
-            "approved_at",
+def get_order_report(filters):
+    qs = (
+        InventoryOrderItem.objects
+        .select_related(
+            "order",
+            "order__warehouse",
+            "order__supplier",
+            "order__requested_by",
+            "order__approved_by",
+            "product",
         )
     )
+
+    if filters.get("start_date"):
+        qs = qs.filter(order__created_at__date__gte=filters["start_date"])
+
+    if filters.get("end_date"):
+        qs = qs.filter(order__created_at__date__lte=filters["end_date"])
+
+    if filters.get("warehouse_id"):
+        qs = qs.filter(order__warehouse_id=filters["warehouse_id"])
+
+    if filters.get("product_id"):
+        qs = qs.filter(product_id=filters["product_id"])
+
+    if filters.get("status"):
+        qs = qs.filter(order__status=filters["status"])
+
+    return qs.annotate(
+        order_created_at=F("order__created_at"),
+        order_status=F("order__status"),
+        warehouse_name=F("order__warehouse__name"),
+        product_name=F("product__name"),
+        requested_by_username=F("order__requested_by__username"),
+        approved_by_username=F("order__approved_by__username"),
+        delta=F("quantity") * -1,
+    ).values(
+        "order_created_at",
+        "order_status",
+        "warehouse_name",
+        "product_name",
+        "delta",
+        "quantity",
+        "unit",
+        "rate",
+        "amount",
+        "requested_by_username",
+        "approved_by_username",
+    ).order_by("-order_created_at")
