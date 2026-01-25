@@ -101,10 +101,11 @@ def get_monthly_stock_report(*, company, month):
     }
 
 
-def get_inventory_valuation():
+def get_inventory_valuation(company):
     return (
         InventoryStock.objects
         .select_related("product", "warehouse")
+        .filter(warehouse__company=company)
         .values(
             "quantity",
             product_name=F("product__name"),
@@ -121,11 +122,11 @@ def get_inventory_valuation():
         .order_by("product__name")
     )
 
-def get_low_stock_report(threshold: int = 10):
+def get_low_stock_report(threshold: int = 10, company=None):
     return (
         InventoryStock.objects
         .select_related("product", "warehouse")
-        .filter(quantity__lt=threshold)
+        .filter(quantity__lt=threshold, warehouse__company=company)
         .values(
             "quantity",
             product_name=F("product__name"),
@@ -142,6 +143,8 @@ def get_audit_report(filters: dict):
         .select_related("product", "warehouse", "created_by")
         .order_by("-created_at")
     )
+
+    qs = qs.filter(warehouse__company=filters["company"])
 
     if filters.get("start_date"):
         qs = qs.filter(
@@ -193,6 +196,8 @@ def get_order_report(filters):
         )
     )
 
+    qs = qs.filter(order__warehouse__company=filters["company"])
+
     if filters.get("start_date"):
         qs = qs.filter(order__created_at__date__gte=filters["start_date"])
 
@@ -231,13 +236,13 @@ def get_order_report(filters):
     ).order_by("-order_created_at")
 
 
-def get_inventory_aging_report():
+def get_inventory_aging_report(company):
     today = timezone.now().date()
 
     stocks = (
         InventoryStock.objects
         .select_related("product", "warehouse")
-        .filter(quantity__gt=0)
+        .filter(warehouse__company=company, quantity__gt=0)
     )
 
     report = []

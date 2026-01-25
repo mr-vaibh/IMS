@@ -2,8 +2,12 @@ from django.conf import settings
 import uuid
 from django.db import models
 
+from company.models import Company
+
 class AuditLog(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    company = models.ForeignKey(Company, on_delete=models.PROTECT, related_name="audit_logs")
 
     entity = models.CharField(max_length=100)
     entity_id = models.CharField(max_length=64)  # 🔥 flexible & safe

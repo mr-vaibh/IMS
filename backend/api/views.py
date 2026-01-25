@@ -640,6 +640,9 @@ def audit_list(request):
         AuditLog.objects
         .select_related("actor")
         .order_by("-created_at")
+        .filter(
+            company=request.user.userprofile.company
+        )
     )
 
     items, meta = paginate(qs, request)
@@ -675,7 +678,9 @@ def stock_report(request):
     if not user_has_permission(request.user, "inventory.view"):
         return Response({"message": "Forbidden"}, status=403)
 
-    qs = InventoryStock.objects.select_related("product", "warehouse")
+    qs = InventoryStock.objects.select_related("product", "warehouse").filter(
+        warehouse__company=request.user.userprofile.company
+    )
 
     product_id = request.GET.get("product_id")
     warehouse_id = request.GET.get("warehouse_id")
@@ -722,10 +727,8 @@ def movement_report(request):
     if not user_has_permission(request.user, "inventory.view"):
         return Response({"message": "Forbidden"}, status=403)
 
-    qs = (
-        InventoryLedger.objects
-        .select_related("product", "warehouse")
-        .order_by("-created_at")
+    qs = InventoryLedger.objects.select_related("product", "warehouse").order_by("-created_at").filter(
+        warehouse__company=request.user.userprofile.company
     )
 
     start_date = request.GET.get("start_date")
@@ -764,7 +767,9 @@ def inventory_valuation_report(request):
     if not user_has_permission(request.user, "inventory.view"):
         return Response({"message": "Forbidden"}, status=403)
 
-    data = list(get_inventory_valuation())
+    company = request.user.userprofile.company
+
+    data = list(get_inventory_valuation(company))
     return Response(data)
 
 
@@ -774,9 +779,10 @@ def low_stock_report(request):
     if not user_has_permission(request.user, "inventory.view"):
         return Response({"message": "Forbidden"}, status=403)
 
+    company = request.user.userprofile.company
     threshold = int(request.GET.get("threshold", 10))
 
-    data = list(get_low_stock_report(threshold))
+    data = list(get_low_stock_report(threshold, company))
     return Response(data)
 
 
@@ -792,6 +798,7 @@ def audit_report(request):
         "product_id": request.GET.get("product_id"),
         "warehouse_id": request.GET.get("warehouse_id"),
         "action": request.GET.get("action"),
+        "company": request.user.userprofile.company,
     }
 
     data = get_audit_report(filters)
@@ -804,6 +811,7 @@ def order_report(request):
         "start_date": request.GET.get("start_date"),
         "end_date": request.GET.get("end_date"),
         "status": request.GET.get("status"),
+        "company": request.user.userprofile.company,
     }
 
     data = get_order_report(filters)
@@ -816,7 +824,8 @@ def inventory_aging_report(request):
     if not user_has_permission(request.user, "inventory.view"):
         return Response({"message": "Forbidden"}, status=403)
 
-    data = get_inventory_aging_report()
+    company = request.user.userprofile.company
+    data = get_inventory_aging_report(company)
     return Response(data)
 
 
