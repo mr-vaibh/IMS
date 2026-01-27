@@ -37,6 +37,7 @@ class AuditLogger:
         entity_id,
         action,
         actor,
+        company,
         old_data=None,
         new_data=None,
     ):
@@ -45,6 +46,7 @@ class AuditLogger:
             entity_id=str(entity_id),
             action=action,
             actor=actor,
+            company=company,
             old_data=make_json_safe(old_data),
             new_data=make_json_safe(new_data),
         )

@@ -85,6 +85,7 @@ def my_profile(request):
             entity_id=profile.id,
             action=AuditAction.UPDATE,
             actor=user,
+            company=profile.company,
             new_data={
                 "username": user.username,
                 "phone_number": profile.phone_number,
@@ -128,6 +129,7 @@ def update_company(request):
         entity_id=company.id,
         action=AuditAction.UPDATE,
         actor=request.user,
+        company=profile.company,
         new_data={
             "name": company.name,
             "address": company.address,
@@ -156,6 +158,7 @@ def update_my_profile(request):
         entity_id=profile.id,
         action=AuditAction.UPDATE,
         actor=user,
+        company=profile.company,
         new_data={
             "username": user.username,
             "phone_number": profile.phone_number,
@@ -265,6 +268,7 @@ def product_list_create(request):
         entity_id=p.id,
         action=AuditAction.CREATE,
         actor=get_actor(request),
+        company=p.company,
         new_data={
             "name": p.name,
             "sku": p.sku,
@@ -298,6 +302,7 @@ def product_update_delete(request, pk):
             entity_id=p.id,
             action=AuditAction.UPDATE,
             actor=get_actor(request),
+            company=p.company,
             old_data=old,
             new_data={
                 "name": p.name,
@@ -315,6 +320,7 @@ def product_update_delete(request, pk):
     AuditLogger.log(
         entity="product",
         entity_id=p.id,
+        company=p.company,
         action=AuditAction.DELETE,
         actor=get_actor(request),
     )
@@ -384,6 +390,7 @@ def warehouse_list_create(request):
         entity_id=w.id,
         action=AuditAction.CREATE,
         actor=get_actor(request),
+        company=profile.company,
         new_data={
             "name": w.name,
             "code": w.code,
@@ -438,6 +445,7 @@ def warehouse_update_delete(request, pk):
             entity_id=warehouse.id,
             action=AuditAction.UPDATE,
             actor=get_actor(request),
+            company=request.user.userprofile.company,
             old_data=old,
             new_data={
                 "name": warehouse.name,
@@ -462,6 +470,7 @@ def warehouse_update_delete(request, pk):
         entity_id=warehouse.id,
         action=AuditAction.DELETE,
         actor=get_actor(request),
+        company=request.user.userprofile.company,
     )
 
     return Response({"message": "deleted"})
@@ -527,6 +536,7 @@ def supplier_list_create(request):
         entity_id=supplier.id,
         action=AuditAction.CREATE,
         actor=get_actor(request),
+        company=profile.company,
         new_data={
             "name": supplier.name,
             "address": address,
@@ -578,6 +588,7 @@ def supplier_update_delete(request, pk):
             entity_id=supplier.id,
             action=AuditAction.UPDATE,
             actor=get_actor(request),
+            company=request.user.userprofile.company,
             old_data=old,
             new_data={
                 "name": supplier.name,
@@ -602,6 +613,7 @@ def supplier_update_delete(request, pk):
         entity_id=supplier.id,
         action=AuditAction.DELETE,
         actor=get_actor(request),
+        company=request.user.userprofile.company,
     )
 
     return Response({"message": "deleted"})
@@ -1394,6 +1406,7 @@ def issue_slip_list_create(request):
         entity_id=slip.id,
         action=AuditAction.CREATE,
         actor=request.user,
+        company=request.user.userprofile.company,
         new_data={
             "warehouse_id": str(slip.warehouse_id),
             "warehouse": slip.warehouse.name,
@@ -1434,6 +1447,7 @@ def issue_slip_approve(request, pk):
         entity_id=slip.id,
         action=AuditAction.UPDATE,
         actor=request.user,
+        company=request.user.userprofile.company,
     )
 
     return Response({"status": "APPROVED"})
@@ -1508,6 +1522,7 @@ def issue_slip_execute(request, pk):
         entity_id=slip.id,
         action=AuditAction.UPDATE,
         actor=request.user,
+        company=request.user.userprofile.company,
         new_data={
             "status": "ISSUED",
             "issue_count": len(issues),
@@ -1691,6 +1706,7 @@ def issue_create(request):
         entity_id=issue.id,
         action=AuditAction.CREATE,
         actor=get_actor(request),
+        company=profile.company,
         new_data={
             "status": issue.status,
             "product_id": str(issue.product_id),

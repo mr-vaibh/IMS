@@ -74,6 +74,7 @@ def stock_in_service(
         entity_id=stock.id,
         action=AuditAction.UPDATE,
         actor=actor,
+        company=warehouse.company,
         old_data=old_stock,
         new_data=model_to_dict(stock),
     )
@@ -135,6 +136,7 @@ def stock_out_service(
         entity_id=stock.id,
         action=AuditAction.UPDATE,
         actor=actor,
+        company=warehouse.company,
         old_data=old_stock,
         new_data=model_to_dict(stock),
     )
@@ -211,6 +213,7 @@ def bulk_stock_in_service(
             entity_id=stock.id,
             action=AuditAction.UPDATE,
             actor=actor,
+            company=warehouse.company,
             old_data=old_stock,
             new_data=model_to_dict(stock),
         )
@@ -292,6 +295,7 @@ def transfer_stock_service(
         entity_id=to_stock.id,
         action=AuditAction.UPDATE,
         actor=actor,
+        company=to_wh.company,
         old_data={"from_qty": from_stock.quantity + quantity},
         new_data={"to_qty": to_stock.quantity},
     )
@@ -346,6 +350,7 @@ def request_order_service(
         entity_id=order.id,
         action=AuditAction.CREATE,
         actor=actor,
+        company=order.warehouse.company,
         new_data={
             "warehouse_id": str(warehouse_id),
             "supplier_id": str(supplier_id),
@@ -379,6 +384,7 @@ def approve_order_service(*, order_id, actor):
         entity_id=order.id,
         action=AuditAction.UPDATE,
         actor=actor,
+        company=order.warehouse.company,
         old_data={"status": "PENDING"},
         new_data={"status": "APPROVED"},
     )
@@ -415,6 +421,7 @@ def reject_order_service(
         entity_id=adj.id,
         action=AuditAction.UPDATE,
         actor=actor,
+        company=adj.warehouse.company,
         old_data={"status": "PENDING"},
         new_data={"status": "REJECTED"},
     )
@@ -532,6 +539,7 @@ def approve_issue(*, issue: InventoryIssue, actor):
         entity_id=issue.id,
         action=AuditAction.UPDATE,
         actor=actor,
+        company=issue.warehouse.company,
         old_data=old_issue,
         new_data={
             "status": issue.status,
@@ -577,6 +585,7 @@ def reject_issue(*, issue: InventoryIssue, actor, reason=None):
         entity_id=issue.id,
         action=AuditAction.UPDATE,
         actor=actor,
+        company=issue.warehouse.company,
         old_data=old_issue,
         new_data={
             "status": issue.status,
@@ -622,6 +631,7 @@ def create_pr_service(*, actor, company, warehouse_id, items):
         entity_id=pr.id,
         action=AuditAction.CREATE,
         actor=actor,
+        company=pr.company,
         new_data={
             "warehouse_id": str(warehouse_id),
             "items": len(items),
@@ -649,6 +659,7 @@ def approve_pr_service(*, pr_id, actor):
         entity_id=pr.id,
         action=AuditAction.UPDATE,
         actor=actor,
+        company=pr.company,
         old_data={"status": "PENDING"},
         new_data={"status": "APPROVED"},
     )
@@ -673,6 +684,7 @@ def reject_pr_service(*, pr_id, actor, reason=None):
         entity_id=pr.id,
         action=AuditAction.UPDATE,
         actor=actor,
+        company=pr.company,
         old_data={"status": "PENDING"},
         new_data={
             "status": "REJECTED",
@@ -725,6 +737,7 @@ def create_po_from_pr_service(*, pr_id, supplier_id, actor):
         entity_id=po.id,
         action=AuditAction.CREATE,
         actor=actor,
+        company=po.warehouse.company,
         new_data={
             "pr_id": str(pr.id),
             "supplier_id": str(supplier_id),
@@ -751,6 +764,7 @@ def approve_po_service(*, order_id, actor):
         entity_id=po.id,
         action=AuditAction.UPDATE,
         actor=actor,
+        company=po.warehouse.company,
         old_data={"status": "PENDING"},
         new_data={"status": "APPROVED"},
     )
@@ -775,6 +789,7 @@ def reject_po_service(*, order_id, actor, reason=None):
         entity_id=po.id,
         action=AuditAction.UPDATE,
         actor=actor,
+        company=po.warehouse.company,
         old_data={"status": "PENDING"},
         new_data={
             "status": "REJECTED",
@@ -852,6 +867,7 @@ def create_grn_service(*, order_id, items, actor):
         entity_id=grn.id,
         action=AuditAction.CREATE,
         actor=actor,
+        company=grn.order.warehouse.company,
         new_data={
             "order_id": str(order.id),
             "items": len(items),
@@ -890,6 +906,7 @@ def approve_grn_service(*, grn_id, actor):
         entity_id=grn.id,
         action=AuditAction.UPDATE,
         actor=actor,
+        company=grn.order.warehouse.company,
         old_data={"status": "PENDING"},
         new_data={"status": "ACCEPTED"},
     )
@@ -912,6 +929,7 @@ def reject_grn_service(*, grn_id, actor, reason=None):
         entity_id=grn.id,
         action=AuditAction.UPDATE,
         actor=actor,
+        company=grn.order.warehouse.company,
         old_data={"status": "PENDING"},
         new_data={
             "status": "REJECTED",
@@ -955,6 +973,7 @@ def approve_issue_slip_service(*, slip_id, actor):
             entity_id=slip.id,
             action=AuditAction.CREATE,
             actor=actor,
+            company=slip.company,
             old_data={"issue_id": None},
             new_data={"issue_id": issue.id},
         )
@@ -964,6 +983,7 @@ def approve_issue_slip_service(*, slip_id, actor):
         entity_id=slip.id,
         action=AuditAction.UPDATE,
         actor=actor,
+        company=slip.company,
         old_data={"status": IssueSlip.STATUS_PENDING},
         new_data={"status": IssueSlip.STATUS_APPROVED},
     )
@@ -987,6 +1007,7 @@ def reject_issue_slip_service(*, slip_id, actor, reason=None):
         entity_id=slip.id,
         action=AuditAction.UPDATE,
         actor=actor,
+        company=slip.company,
         old_data={"status": IssueSlip.STATUS_PENDING},
         new_data={
             "status": IssueSlip.STATUS_REJECTED,
