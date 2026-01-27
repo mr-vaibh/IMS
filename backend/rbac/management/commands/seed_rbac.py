@@ -82,6 +82,8 @@ class Command(BaseCommand):
             ],
     
             "Staff-II": [
+                "inventory.view",
+
                 "inventory.pr.view",
                 "inventory.pr.create",
                 "inventory.issue_slip.view",
@@ -90,18 +92,20 @@ class Command(BaseCommand):
                 "inventory.po.view",
             ],
 
-            "Gate": [
+            "Gate Staff": [
                 "inventory.grn.view",
                 "inventory.grn.create",
                 "inventory.grn.approve",
             ],
 
-            "Store": [
+            "Issue Staff": [
+                "inventory.view",
                 "inventory.issue.execute",
                 "inventory.issue_slip.view",
             ],
 
             "Staff-I": [
+                "inventory.view",
                 "inventory.pr.view",
                 "inventory.pr.create",
                 "inventory.issue_slip.view",

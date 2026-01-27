@@ -174,7 +174,7 @@ def update_my_profile(request):
 @permission_classes([IsAuthenticated])
 def inventory_list(request):
     if not user_has_permission(request.user, "inventory.view"):
-        return Response({"message": "Forbidden"}, status=403)
+        return Response({"message": "You don't have access to view Inventory"}, status=403)
 
     profile = request.user.userprofile
     company = profile.company

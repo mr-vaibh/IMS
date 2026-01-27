@@ -127,13 +127,14 @@ export default function Navbar() {
               Settings
             </Link>
           )}
-
         </div>
 
         {/* Mobile Hamburger */}
         <div className="md:hidden flex items-center gap-2">
           {user && (
-            <span className="text-sm text-slate-700 font-medium">{user.username}</span>
+            <span className="text-sm text-slate-700 font-medium">
+              {user.username}
+            </span>
           )}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -168,7 +169,9 @@ export default function Navbar() {
         {/* Logout Button */}
         <div className="hidden md:block ml-4">
           {user && (
-            <span className="text-slate-700 font-bold mr-4">{user.username}</span>
+            <span className="text-slate-700 font-bold mr-4">
+              {user.username}
+            </span>
           )}
           <button onClick={logout} className="btn-ghost">
             Logout
@@ -179,40 +182,85 @@ export default function Navbar() {
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden px-4 pb-4 space-y-2">
-          <Link href="/inventory" className="block navbar-link" onClick={() => setMobileMenuOpen(false)}>
+          <Link
+            href="/inventory"
+            className="block navbar-link"
+            onClick={() => setMobileMenuOpen(false)}
+          >
             Inventory
           </Link>
-          {hasPermission(perms, "inventory.view_orders") && (
-            <Link href="/orders" className="block navbar-link" onClick={() => setMobileMenuOpen(false)}>
+
+          {hasPermission(perms, "inventory.pr.view") && (
+            <Link
+              href="/inventory/pr"
+              className="block navbar-link"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Requisitions
+            </Link>
+          )}
+
+          {hasPermission(perms, "inventory.po.view") && (
+            <Link
+              href="/inventory/po"
+              className="block navbar-link"
+              onClick={() => setMobileMenuOpen(false)}
+            >
               Orders
             </Link>
           )}
-          {hasPermission(perms, "inventory.issue_view") && (
-            <Link href="/issues" className="block navbar-link" onClick={() => setMobileMenuOpen(false)}>
+
+          {hasPermission(perms, "inventory.grn.view") && (
+            <Link
+              href="/inventory/grn"
+              className="block navbar-link"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              GRN
+            </Link>
+          )}
+
+          {hasPermission(perms, "inventory.issue_slip.view") && (
+            <Link
+              href="/inventory/issue-slips"
+              className="block navbar-link"
+              onClick={() => setMobileMenuOpen(false)}
+            >
               Issues
             </Link>
           )}
+
           {hasPermission(perms, "inventory.view") && (
-            <Link href="/reports" className="block navbar-link" onClick={() => setMobileMenuOpen(false)}>
+            <Link
+              href="/reports"
+              className="block navbar-link"
+              onClick={() => setMobileMenuOpen(false)}
+            >
               Reports
             </Link>
           )}
+
           {hasPermission(perms, "inventory.view_audit") && (
-            <Link href="/audit" className="block navbar-link" onClick={() => setMobileMenuOpen(false)}>
+            <Link
+              href="/audit"
+              className="block navbar-link"
+              onClick={() => setMobileMenuOpen(false)}
+            >
               Audit
             </Link>
           )}
+
           {hasPermission(perms, "company.manage") && (
-            <Link href="/settings" className="block navbar-link" onClick={() => setMobileMenuOpen(false)}>
+            <Link
+              href="/settings"
+              className="block navbar-link"
+              onClick={() => setMobileMenuOpen(false)}
+            >
               Settings
             </Link>
           )}
 
-
-          <button
-            onClick={logout}
-            className="w-full mt-2 btn-ghost"
-          >
+          <button onClick={logout} className="w-full mt-2 btn-ghost">
             Logout
           </button>
         </div>
