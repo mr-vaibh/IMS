@@ -1,8 +1,15 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+import { TabulatorFull as Tabulator } from "tabulator-tables";
+import "tabulator-tables/dist/css/tabulator.min.css";
+
 import ReportLayout from "./ReportLayout";
 
 export default function MonthlyStockReport({ data }: { data: any }) {
+  const tableRef = useRef<HTMLDivElement>(null);
+  const tabulatorRef = useRef<Tabulator | null>(null);
+
   if (!data) return null;
 
   const days = Array.from({ length: data.days }, (_, i) => i + 1);
@@ -21,49 +28,74 @@ export default function MonthlyStockReport({ data }: { data: any }) {
     });
 
     row["Closing"] = r.closing;
-
     return row;
   });
+
+  useEffect(() => {
+    if (!tableRef.current) return;
+
+    // Destroy old instance on re-render
+    tabulatorRef.current?.destroy();
+
+    tabulatorRef.current = new Tabulator(tableRef.current, {
+      data: data.rows,
+      layout: "fitData",
+      movableColumns: false,
+      reactiveData: true,
+
+      columns: [
+        {
+          title: "Product",
+          field: "product_name",
+          frozen: true,
+          headerSort: false,
+        },
+        {
+          title: "Warehouse",
+          field: "warehouse_name",
+          frozen: true,
+          headerSort: false,
+        },
+        {
+          title: "Unit",
+          field: "unit",
+          frozen: true,
+          headerSort: false,
+        },
+        {
+          title: "Opening",
+          field: "opening",
+          hozAlign: "right",
+        },
+
+        // 🔁 Dynamic day columns
+        ...days.map((d) => ({
+          title: d.toString(),
+          field: `daily.${d}`,
+          hozAlign: "right",
+        })),
+
+        {
+          title: "Closing",
+          field: "closing",
+          hozAlign: "right",
+        },
+      ],
+    });
+
+    return () => {
+      tabulatorRef.current?.destroy();
+      tabulatorRef.current = null;
+    };
+  }, [data]);
 
   return (
     <ReportLayout
       title={`Monthly Stock Report (${data.month})`}
       filename={`monthly_stock_${data.month}.csv`}
-      rows={exportRows}   // ✅ THIS FIXES EXPORT
+      rows={exportRows}
     >
-      <div className="overflow-x-auto">
-        <table className="table text-xs min-w-max">
-          <thead className="bg-gray-50">
-            <tr>
-              <th>Product</th>
-              <th>Warehouse</th>
-              <th>Unit</th>
-              <th>Opening</th>
-              {days.map((d) => (
-                <th key={d}>{d}</th>
-              ))}
-              <th>Closing</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {data.rows.map((r: any, idx: number) => (
-              <tr key={idx} className="border-t">
-                <td>{r.product_name}</td>
-                <td>{r.warehouse_name}</td>
-                <td>{r.unit}</td>
-                <td className="font-medium">{r.opening}</td>
-
-                {days.map((d) => (
-                  <td key={d}>{r.daily[d]}</td>
-                ))}
-
-                <td className="font-semibold">{r.closing}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <div ref={tableRef} />
     </ReportLayout>
   );
 }
