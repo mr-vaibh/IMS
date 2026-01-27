@@ -125,25 +125,29 @@ export default function ReportsClient() {
         </div>
 
         {/* Date filters */}
-        <div className="flex flex-col text-sm">
-          <label className="text-gray-600">Start date</label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="border rounded px-2 py-1"
-          />
-        </div>
+        {activeReport !== "monthly-stock" && (
+          <>
+            <div className="flex flex-col text-sm">
+              <label className="text-gray-600">Start date</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="border rounded px-2 py-1"
+                />
+            </div>
 
-        <div className="flex flex-col text-sm">
-          <label className="text-gray-600">End date</label>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="border rounded px-2 py-1"
-          />
-        </div>
+            <div className="flex flex-col text-sm">
+              <label className="text-gray-600">End date</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="border rounded px-2 py-1"
+                />
+            </div>
+          </>
+        )}
 
         {activeReport === "monthly-stock" && (
           <div className="flex flex-col text-sm">

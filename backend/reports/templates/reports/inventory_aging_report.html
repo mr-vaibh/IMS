@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Inventory Aging Report</title>
+
+  <style>
+    /* ===== BASE ===== */
+    body {
+      font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+      font-size: 12px;
+      color: #2b2b2b;
+      margin: 24px;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      text-align: center;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #2f5597;
+      margin-bottom: 20px;
+    }
+
+    .header h2 {
+      margin: 0;
+      font-size: 20px;
+      color: #2f5597;
+      letter-spacing: 0.5px;
+    }
+
+    .meta {
+      margin-top: 6px;
+      font-size: 11px;
+      color: #555;
+      line-height: 1.4;
+    }
+
+    /* ===== TABLE ===== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+
+    th, td {
+      border: 1px solid #d6d6d6;
+      padding: 8px 10px;
+      vertical-align: middle;
+    }
+
+    th {
+      background-color: #f4f6fa;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      text-align: center;
+      color: #333;
+    }
+
+    td {
+      font-size: 12px;
+    }
+
+    td.num {
+      text-align: right;
+    }
+
+    td.center {
+      text-align: center;
+    }
+
+    /* ===== AGING BUCKETS ===== */
+    .bucket-0-30 {
+      background-color: #e8f5e9;
+    }
+
+    .bucket-31-60 {
+      background-color: #fffde7;
+    }
+
+    .bucket-61-90 {
+      background-color: #fff3e0;
+    }
+
+    .bucket-90-plus {
+      background-color: #ffebee;
+      font-weight: 600;
+    }
+
+    /* ===== EMPTY STATE ===== */
+    .empty {
+      padding: 16px;
+      font-style: italic;
+      color: #777;
+    }
+
+    /* ===== SIGNATURE / FOOTER ===== */
+    .signature {
+      margin-top: 48px;
+      font-size: 11px;
+      text-align: right;
+      color: #444;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <h2>Inventory Aging Report</h2>
+    <div class="meta">
+      <strong>{{ company.name }}</strong><br/>
+      {{ company.address|linebreaksbr }}<br/>
+      <strong>Generated:</strong> {{ generated_at|date:"d M Y, H:i" }}
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <table>
+    <thead>
+      <tr>
+        <th>Product</th>
+        <th>Warehouse</th>
+        <th>Quantity</th>
+        <th>Last In Date</th>
+        <th>Age (Days)</th>
+        <th>Aging Bucket</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for r in rows %}
+        <tr
+          class="
+            {% if r.bucket == '0–30' %}bucket-0-30{% endif %}
+            {% if r.bucket == '31–60' %}bucket-31-60{% endif %}
+            {% if r.bucket == '61–90' %}bucket-61-90{% endif %}
+            {% if r.bucket == '90+' %}bucket-90-plus{% endif %}
+          "
+        >
+          <td>{{ r.product_name }}</td>
+          <td>{{ r.warehouse }}</td>
+          <td class="num">{{ r.quantity }}</td>
+          <td class="center">
+            {% if r.last_in_date %}
+              {{ r.last_in_date|date:"d M Y" }}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+          <td class="num">
+            {% if r.age_days is not None %}
+              {{ r.age_days }}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+          <td class="center">{{ r.bucket }} days</td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="6" class="center empty">
+            No inventory aging data available
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- FOOTER / SIGNATURE -->
+  <div class="signature">
+    <strong>{{ signature.statement }}</strong><br/><br/>
+
+    <div>
+        <strong>Digitally Signed By:</strong><br/>
+        {{ signature.signed_by|default:"Authorized User" }}<br/>
+        {{ signature.role }}<br/>
+        {{ signature.company }}
+    </div>
+
+    <div style="margin-top: 8px; font-size: 10px; color: #666;">
+        Signed on {{ signature.signed_at|date:"d M Y, H:i" }} (UTC)
+    </div>
+  </div>
+
+</body>
+</html>

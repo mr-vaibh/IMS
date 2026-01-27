@@ -728,7 +728,8 @@ def movement_report(request):
         return Response({"message": "Forbidden"}, status=403)
 
     qs = InventoryLedger.objects.select_related("product", "warehouse").order_by("-created_at").filter(
-        warehouse__company=request.user.userprofile.company
+        warehouse__company=request.user.userprofile.company,
+        warehouse__deleted_at__isnull=True
     )
 
     start_date = request.GET.get("start_date")

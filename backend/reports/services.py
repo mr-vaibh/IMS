@@ -13,8 +13,9 @@ def get_stock_report_data():
     return (
         InventoryStock.objects
         .select_related("product", "warehouse")
+        .filter(warehouse__deleted_at__isnull=True)
         .values(
-            "quantity",                       # ✅ direct field
+            "quantity",
             product_name=F("product__name"),
             warehouse_name=F("warehouse__name"),
             unit=F("product__unit"),
@@ -39,7 +40,7 @@ def get_monthly_stock_report(*, company, month):
     stocks = (
         InventoryStock.objects
         .select_related("product", "warehouse")
-        .filter(warehouse__company=company)
+        .filter(warehouse__company=company, warehouse__deleted_at__isnull=True)
     )
 
     for stock in stocks:
@@ -52,6 +53,7 @@ def get_monthly_stock_report(*, company, month):
             .filter(
                 product=stock.product,
                 warehouse=stock.warehouse,
+                warehouse__deleted_at__isnull=True,
                 created_at__gte=start_date,
             )
             .aggregate(total=Sum("change"))["total"] or 0
@@ -75,6 +77,7 @@ def get_monthly_stock_report(*, company, month):
                 .filter(
                     product=stock.product,
                     warehouse=stock.warehouse,
+                    warehouse__deleted_at__isnull=True,
                     created_at__range=(day_start, day_end),
                 )
                 .aggregate(total=Sum("change"))["total"] or 0
@@ -105,7 +108,7 @@ def get_inventory_valuation(company):
     return (
         InventoryStock.objects
         .select_related("product", "warehouse")
-        .filter(warehouse__company=company)
+        .filter(warehouse__company=company, warehouse__deleted_at__isnull=True)
         .values(
             "quantity",
             product_name=F("product__name"),
@@ -126,7 +129,7 @@ def get_low_stock_report(threshold: int = 10, company=None):
     return (
         InventoryStock.objects
         .select_related("product", "warehouse")
-        .filter(quantity__lt=threshold, warehouse__company=company)
+        .filter(quantity__lt=threshold, warehouse__company=company, warehouse__deleted_at__isnull=True)
         .values(
             "quantity",
             product_name=F("product__name"),
@@ -220,6 +223,7 @@ def get_order_report(filters):
         product_name=F("product__name"),
         requested_by_username=F("order__requested_by__username"),
         approved_by_username=F("order__approved_by__username"),
+        reason=F("order__reason"),
         delta=F("quantity") * -1,
     ).values(
         "order_created_at",
@@ -233,6 +237,7 @@ def get_order_report(filters):
         "amount",
         "requested_by_username",
         "approved_by_username",
+        "reason",
     ).order_by("-order_created_at")
 
 
@@ -242,7 +247,7 @@ def get_inventory_aging_report(company):
     stocks = (
         InventoryStock.objects
         .select_related("product", "warehouse")
-        .filter(warehouse__company=company, quantity__gt=0)
+        .filter(warehouse__company=company, warehouse__deleted_at__isnull=True, quantity__gt=0)
     )
 
     report = []
@@ -253,6 +258,7 @@ def get_inventory_aging_report(company):
             .filter(
                 product=stock.product,
                 warehouse=stock.warehouse,
+                warehouse__deleted_at__isnull=True,
                 change__gt=0,
             )
             .order_by("-created_at")

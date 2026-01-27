@@ -8,7 +8,7 @@ from weasyprint import HTML
 from rbac.services import user_has_permission
 from django.utils.dateparse import parse_date
 
-from .services import get_stock_report_data, get_inventory_valuation, get_low_stock_report, get_audit_report, get_order_report
+from .services import get_stock_report_data, get_inventory_valuation, get_low_stock_report, get_audit_report, get_order_report, get_inventory_aging_report
 from .utils import get_signature_block
 
 from inventory.models import InventoryLedger, InventoryIssue, InventoryOrder, GoodsReceiptNote, IssueSlip
@@ -23,10 +23,10 @@ def stock_report_pdf(request):
     company_name = "—"
 
     if hasattr(user, "userprofile") and user.userprofile.company:
-        company_name = user.userprofile.company.name
+        company = user.userprofile.company
 
     context = {
-        "company": company_name,
+        "company": company,
         "generated_at": timezone.now(),
         "rows": rows,
     }
@@ -51,6 +51,7 @@ def movement_report_pdf(request):
     qs = (
         InventoryLedger.objects
         .select_related("product", "warehouse")
+        .filter(warehouse__company=request.user.userprofile.company, warehouse__deleted_at__isnull=True)
         .order_by("-created_at")
     )
 
@@ -76,7 +77,7 @@ def movement_report_pdf(request):
     context = {
         "company": profile.company.name if profile.company else "—",
         "generated_at": timezone.now(),
-        "signed_by": profile.user.get_full_name(),
+        "signed_by": profile.user.get_full_name() or profile.user.username,
         "role": profile.role.name,
         "rows": qs,
         "filters": {
@@ -102,7 +103,8 @@ def movement_report_pdf(request):
 
 @login_required
 def inventory_valuation_pdf(request):
-    rows = get_inventory_valuation()
+    company = request.user.userprofile.company
+    rows = get_inventory_valuation(company)
     profile = request.user.userprofile
 
     context = {
@@ -116,13 +118,17 @@ def inventory_valuation_pdf(request):
     html = render_to_string("reports/inventory_valuation.html", context)
     pdf = HTML(string=html).write_pdf()
 
-    return HttpResponse(pdf, content_type="application/pdf")
+    response = HttpResponse(pdf, content_type="application/pdf")
+    response["Content-Disposition"] = "inline; filename=Inventory_Valuation_Report.pdf"
+
+    return response
 
 
 @login_required
 def low_stock_report_pdf(request):
     threshold = int(request.GET.get("threshold", 100))
-    raw_rows = get_low_stock_report(threshold)
+    company = request.user.userprofile.company
+    raw_rows = get_low_stock_report(threshold, company)
 
     rows = [
         {
@@ -148,7 +154,10 @@ def low_stock_report_pdf(request):
     html = render_to_string("reports/low_stock_report.html", context)
     pdf = HTML(string=html).write_pdf()
 
-    return HttpResponse(pdf, content_type="application/pdf")
+    response = HttpResponse(pdf, content_type="application/pdf")
+    response["Content-Disposition"] = "inline; filename=Low_Stock_Report.pdf"
+    
+    return response
 
 
 
@@ -160,6 +169,7 @@ def audit_report_pdf(request):
         "product_id": request.GET.get("product_id"),
         "warehouse_id": request.GET.get("warehouse_id"),
         "action": request.GET.get("action"),
+        "company": request.user.userprofile.company,
     }
 
     rows = get_audit_report(filters)
@@ -180,7 +190,10 @@ def audit_report_pdf(request):
     )
 
     pdf = HTML(string=html).write_pdf()
-    return HttpResponse(pdf, content_type="application/pdf")
+    response = HttpResponse(pdf, content_type="application/pdf")
+    response["Content-Disposition"] = "inline; filename=Audit_Report.pdf"
+
+    return response
 
 
 @login_required
@@ -191,6 +204,7 @@ def order_report_pdf(request):
         "product_id": request.GET.get("product_id"),
         "warehouse_id": request.GET.get("warehouse_id"),
         "status": request.GET.get("status"),
+        "company": request.user.userprofile.company,
     }
 
     rows = get_order_report(filters)
@@ -213,7 +227,31 @@ def order_report_pdf(request):
     pdf = HTML(string=html).write_pdf()
 
     response = HttpResponse(pdf, content_type="application/pdf")
-    response["Content-Disposition"] = "inline; filename=order_report.pdf"
+    response["Content-Disposition"] = "inline; filename=Order_Report.pdf"
+
+    return response
+
+
+@login_required
+def aging_report_pdf(request):
+    company = request.user.userprofile.company
+    rows = get_inventory_aging_report(company)
+
+    profile = request.user.userprofile
+
+    context = {
+        "company": profile.company if profile.company else "—",
+        "generated_at": timezone.now(),
+        "rows": rows,
+        "signature": get_signature_block(profile),
+    }
+
+    html = render_to_string("reports/inventory_aging_report.html", context)
+    pdf = HTML(string=html).write_pdf()
+
+    response = HttpResponse(pdf, content_type="application/pdf")
+    response["Content-Disposition"] = "inline; filename=Inventory_Aging_Report.pdf"
+
     return response
 
 

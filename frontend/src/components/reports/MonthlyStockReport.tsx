@@ -7,10 +7,29 @@ export default function MonthlyStockReport({ data }: { data: any }) {
 
   const days = Array.from({ length: data.days }, (_, i) => i + 1);
 
+  // 🔥 Flatten rows for export
+  const exportRows = data.rows.map((r: any) => {
+    const row: Record<string, any> = {
+      Product: r.product_name,
+      Warehouse: r.warehouse_name,
+      Unit: r.unit,
+      Opening: r.opening,
+    };
+
+    days.forEach((d) => {
+      row[`Day ${d}`] = r.daily[d];
+    });
+
+    row["Closing"] = r.closing;
+
+    return row;
+  });
+
   return (
     <ReportLayout
       title={`Monthly Stock Report (${data.month})`}
       filename={`monthly_stock_${data.month}.csv`}
+      rows={exportRows}   // ✅ THIS FIXES EXPORT
     >
       <div className="overflow-x-auto">
         <table className="table text-xs min-w-max">
@@ -20,7 +39,7 @@ export default function MonthlyStockReport({ data }: { data: any }) {
               <th>Warehouse</th>
               <th>Unit</th>
               <th>Opening</th>
-              {days.map(d => (
+              {days.map((d) => (
                 <th key={d}>{d}</th>
               ))}
               <th>Closing</th>
@@ -35,7 +54,7 @@ export default function MonthlyStockReport({ data }: { data: any }) {
                 <td>{r.unit}</td>
                 <td className="font-medium">{r.opening}</td>
 
-                {days.map(d => (
+                {days.map((d) => (
                   <td key={d}>{r.daily[d]}</td>
                 ))}
 

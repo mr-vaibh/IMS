@@ -88,14 +88,14 @@
   <tbody>
     {% for r in rows %}
     <tr>
-      <td>{{ r.created_at|date:"Y-m-d H:i" }}</td>
-      <td>{{ r.product__name }}</td>
-      <td>{{ r.warehouse__name }}</td>
+      <td>{{ r.order_created_at|date:"Y-m-d H:i" }}</td>
+      <td>{{ r.product_name }}</td>
+      <td>{{ r.warehouse_name }}</td>
       <td class="right delta-col">{{ r.delta }}</td>
-      <td class="status">{{ r.status }}</td>
-      <td>{{ r.reason }}</td>
-      <td>{{ r.requested_by__username|default:"—" }}</td>
-      <td>{{ r.approved_by__username|default:"—" }}</td>
+      <td class="status">{{ r.order_status }}</td>
+      <td>{{ r.reason|default:"" }}</td>
+      <td>{{ r.requested_by_username|default:"—" }}</td>
+      <td>{{ r.approved_by_username|default:"—" }}</td>
     </tr>
     {% empty %}
     <tr>
